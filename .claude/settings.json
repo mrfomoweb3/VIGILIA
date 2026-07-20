@@ -32,7 +32,8 @@
       "Bash(curl -s -o /dev/null -w \"  status=%{http_code} time=%{time_total}s\\\\n\" --max-time 20 https://backboard.railway.com/)",
       "Bash(curl -s -o /dev/null -w \"  status=%{http_code} time=%{time_total}s\\\\n\" --max-time 20 https://railway.com/)",
       "Read(//dev/**)",
-      "Bash(curl -s -o /dev/null -w \"  status=%{http_code} time=%{time_total}s\\\\n\" --max-time 45 -X POST --data-binary @- https://httpbin.org/post)"
+      "Bash(curl -s -o /dev/null -w \"  status=%{http_code} time=%{time_total}s\\\\n\" --max-time 45 -X POST --data-binary @- https://httpbin.org/post)",
+      "Bash(gh repo *)"
     ]
   }
 }
