@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:3000/api/health)",
+      "Bash(curl -s http://localhost:3000/api/config)",
+      "Bash(curl -s -X POST http://localhost:3000/api/check -H \"Content-Type: application/json\" -d '{\"url\":\"https://www.google.com\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/check -H \"Content-Type: application/json\" -d '{\"url\":\"https://gtbank-secure.com/verify\"}')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -X POST http://localhost:3000/api/check -H \"Content-Type: application/json\" -d '{}')",
+      "Bash('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --headless=new --disable-gpu --hide-scrollbars --window-size=1000,1100 --screenshot=/private/tmp/claude-501/-Users-macbook-VIGILIA/84fff752-139f-457d-9f99-02880e7a987b/scratchpad/live.png http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"server up: %{http_code}\\\\n\" http://localhost:3000/api/health)",
+      "Bash('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --headless=new --disable-gpu --hide-scrollbars --window-size=1440,1000 --screenshot=/private/tmp/claude-501/-Users-macbook-VIGILIA/84fff752-139f-457d-9f99-02880e7a987b/scratchpad/fullbleed-wide.png http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"server: %{http_code}\\\\n\" http://localhost:3000/api/health)",
+      "Bash('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --headless=new --disable-gpu --hide-scrollbars --window-size=1280,860 --screenshot=/private/tmp/claude-501/-Users-macbook-VIGILIA/84fff752-139f-457d-9f99-02880e7a987b/scratchpad/hero.png http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"html:%{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"css:%{http_code}\\\\n\" http://localhost:3000/style.css)",
+      "Bash(curl -s -o /dev/null -w \"js:%{http_code}\\\\n\" http://localhost:3000/app.js)",
+      "Bash('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --headless=new --disable-gpu --hide-scrollbars --window-size=1280,860 --screenshot=/private/tmp/claude-501/-Users-macbook-VIGILIA/84fff752-139f-457d-9f99-02880e7a987b/scratchpad/run-live.png http://localhost:3000/)",
+      "Bash('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --headless=new --disable-gpu --hide-scrollbars --window-size=1280,760 --screenshot=/private/tmp/claude-501/-Users-macbook-VIGILIA/84fff752-139f-457d-9f99-02880e7a987b/scratchpad/two-line.png http://localhost:3000/)",
+      "WebFetch(domain:www.hackquest.io)",
+      "WebFetch(domain:www.okx.ai)",
+      "Bash(command -v docker)",
+      "Bash(docker build *)",
+      "Bash(python3 -)",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "Bash(curl -s -X POST http://localhost:3000/api/check -H 'Content-Type: application/json' -d '{\"url\":\"http://malware.testing.google.test/testing/malware/\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/check -H 'Content-Type: application/json' -d '{\"url\":\"https://www.google.com\"}')",
+      "Bash(python3 -c ' *)",
+      "Bash(cp __TRACKED_VAR__/phish.png demo/phishing-sample.png)",
+      "Bash(cp __TRACKED_VAR__/phish.html demo/phishing-sample.html)"
+    ]
+  }
+}

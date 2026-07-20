@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VIGILIA — scam check with evidence</title>
+  <meta name="description" content="Paste a link or upload a screenshot. Get a verdict with evidence. Deterministic security checks — the AI only explains the verdict." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="frame" id="top">
+
+    <!-- TOP BAND -->
+    <div class="topband">
+      <nav class="topnav" aria-label="Utility links">
+        <a href="#check">Run a check</a>
+        <a href="#why">Why trust it</a>
+        <a href="https://okx.ai" target="_blank" rel="noopener">OKX.AI&nbsp;↗</a>
+      </nav>
+    </div>
+
+    <!-- LOGO / NAV ROW -->
+    <div class="navrow">
+      <a class="brand" href="#top">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
+          <circle cx="20" cy="20" r="3" fill="currentColor" />
+          <path d="M20 12 A8 8 0 0 1 28 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+          <path d="M20 6 A14 14 0 0 1 34 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+        </svg>
+        <span class="wordmark">VIGILIA</span>
+      </a>
+      <nav class="mainnav" aria-label="Primary">
+        <a href="#top">Home</a>
+        <a href="#check">Detector</a>
+        <a href="#how">How it works</a>
+        <a href="#pricing">Pricing</a>
+      </nav>
+      <a class="navcell iconcell" href="#check" aria-label="Go to the detector">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2" />
+          <line x1="16" y1="16" x2="21" y2="21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+        </svg>
+      </a>
+      <span class="navcell pricetag" id="pricetag">0.2 USDT</span>
+    </div>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-copy">
+        <h1>
+          That email is <span class="hl">lying</span> to you.<br />
+          Probably.
+        </h1>
+        <p class="subhead">
+          Paste a link. Upload a screenshot. Get a verdict backed by real
+          security checks — not an AI guessing.
+          <strong id="hero-price">0.2 USDT</strong> per check.
+        </p>
+        <a class="btn cta hero-btn" href="#check">RUN A CHECK &nbsp;↗</a>
+      </div>
+
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 520 470" role="img" focusable="false">
+          <!-- decorative squiggle + dots + sparkles -->
+          <path d="M96 150 C136 118 158 182 126 202 C96 220 138 250 182 228" fill="none" stroke="#101010" stroke-width="2.5" stroke-linecap="round" />
+          <path d="M92 300 C132 280 154 332 116 344 C88 352 110 384 150 368" fill="none" stroke="#101010" stroke-width="2" stroke-dasharray="2 8" stroke-linecap="round" />
+          <path d="M250 176 A126 126 0 0 0 250 344" fill="none" stroke="#101010" stroke-width="2" stroke-dasharray="3 9" stroke-linecap="round" />
+          <g stroke="#101010" stroke-width="2.5" stroke-linecap="round">
+            <line x1="78" y1="236" x2="78" y2="256" /><line x1="68" y1="246" x2="88" y2="246" />
+            <line x1="196" y1="104" x2="196" y2="120" /><line x1="188" y1="112" x2="204" y2="112" />
+            <line x1="150" y1="410" x2="150" y2="426" /><line x1="142" y1="418" x2="158" y2="418" />
+          </g>
+
+          <!-- shield / verified badge -->
+          <g transform="translate(96,352)">
+            <path d="M0 6 L52 6 L52 34 C52 60 26 74 26 74 C26 74 0 60 0 34 Z" fill="#b79cec" stroke="#101010" stroke-width="3" />
+            <path d="M14 38 l9 9 l18 -22" fill="none" stroke="#101010" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+
+          <!-- phone: offset shadow + body -->
+          <rect x="262" y="86" width="212" height="360" rx="26" fill="#101010" />
+          <rect x="252" y="76" width="212" height="360" rx="26" fill="#ffffff" stroke="#101010" stroke-width="3" />
+          <circle cx="358" cy="98" r="4" fill="#101010" />
+          <rect x="270" y="114" width="176" height="304" rx="12" fill="none" stroke="#101010" stroke-width="2" />
+
+          <!-- envelope being scanned -->
+          <rect x="292" y="156" width="132" height="94" fill="#f6f3ea" stroke="#101010" stroke-width="2.5" />
+          <path d="M292 156 L358 208 L424 156" fill="none" stroke="#101010" stroke-width="2.5" />
+          <!-- warning sticker -->
+          <circle cx="300" cy="156" r="15" fill="#c8f94e" stroke="#101010" stroke-width="2.5" />
+          <line x1="300" y1="150" x2="300" y2="158" stroke="#101010" stroke-width="2.5" stroke-linecap="round" />
+          <circle cx="300" cy="163" r="1.6" fill="#101010" />
+
+          <!-- magnifier scanning -->
+          <circle cx="406" cy="252" r="31" fill="#ffffff" stroke="#101010" stroke-width="3" />
+          <path d="M394 252 l8 9 l16 -19" fill="none" stroke="#101010" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+          <line x1="428" y1="274" x2="452" y2="298" stroke="#101010" stroke-width="6" stroke-linecap="round" />
+
+          <!-- scan progress bar -->
+          <line x1="292" y1="372" x2="424" y2="372" stroke="#101010" stroke-width="2.5" stroke-linecap="round" />
+          <circle cx="332" cy="372" r="6.5" fill="#b79cec" stroke="#101010" stroke-width="2.5" />
+        </svg>
+      </div>
+    </section>
+
+    <!-- CHECK WIDGET -->
+    <section class="widget" id="check">
+      <div class="card">
+        <form id="check-form" novalidate>
+          <label class="field-label" for="input-text">Paste link or email text</label>
+          <textarea
+            id="input-text"
+            name="input-text"
+            rows="5"
+            placeholder="https://paypa1-secure.com/verify   —or—   paste the full email text"
+            aria-describedby="drop-hint"
+          ></textarea>
+
+          <div
+            id="dropzone"
+            class="dropzone"
+            tabindex="0"
+            role="button"
+            aria-label="Drop a screenshot here or press Enter to choose a file"
+          >
+            <span id="drop-hint">Or drop a screenshot here</span>
+            <span id="file-name" class="file-name" hidden></span>
+            <input type="file" id="file-input" accept="image/png,image/jpeg,image/gif,image/webp" hidden />
+          </div>
+
+          <button type="submit" id="run-btn" class="btn">RUN CHECK &nbsp;↗</button>
+        </form>
+      </div>
+
+      <!-- RESULT CARD -->
+      <div id="result" class="result" hidden aria-live="polite">
+        <div class="verdict-band" id="verdict-band">
+          <span id="verdict-label">VERDICT</span>
+          <span id="confidence-label" class="confidence"></span>
+        </div>
+        <div class="result-body">
+          <div class="evidence-block">
+            <span class="block-label">Evidence</span>
+            <ul id="evidence-list" class="evidence-list"></ul>
+          </div>
+          <div class="explain-block">
+            <span class="block-label">Explanation</span>
+            <p id="explanation"></p>
+          </div>
+          <div class="reco-block">
+            <span class="block-label">Recommendation</span>
+            <p id="recommendation"></p>
+          </div>
+          <span class="checkid" id="checkid"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="how" id="how">
+      <h2 class="section-label"><span class="tag">How it works</span></h2>
+      <div class="how-row"><span class="how-num">01</span><span class="how-name">EXTRACT</span><span class="how-desc">OCR + link parsing</span></div>
+      <div class="how-row"><span class="how-num">02</span><span class="how-name">VERIFY</span><span class="how-desc">Safe Browsing / WHOIS / typosquat / SPF-DKIM</span></div>
+      <div class="how-row"><span class="how-num">03</span><span class="how-name">VERDICT</span><span class="how-desc">AI explains. Rules decide.</span></div>
+    </section>
+
+    <!-- WHY TRUST IT -->
+    <section class="why" id="why">
+      <h2 class="section-label"><span class="tag tag-lime">Why trust it</span></h2>
+      <p class="pull">
+        We don't ask an AI if something looks scammy. We run deterministic
+        security checks. The AI only explains the verdict in plain language.
+      </p>
+      <ul class="why-list">
+        <li>Google Safe Browsing database</li>
+        <li>Domain age via WHOIS</li>
+        <li>Typosquat detection incl. Nigerian banks &amp; fintech (GTBank, Kuda, OPay…)</li>
+        <li>Sender authentication (SPF / DKIM / DMARC) when headers are present</li>
+        <li>Nothing you submit is stored</li>
+      </ul>
+    </section>
+
+    <!-- PRICING -->
+    <section class="pricing" id="pricing">
+      <h2 class="section-label"><span class="tag">Pricing</span></h2>
+      <p class="pricing-line">
+        <span id="pricing-amount">0.2 USDT</span> per check. No subscription. No account.
+      </p>
+      <a class="btn cta" id="okx-cta" href="https://okx.ai" target="_blank" rel="noopener">TRY IT ON OKX.AI &nbsp;↗</a>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <span>VIGILIA — an ASP by Diacreate</span>
+      <span>Built for the OKX.AI Genesis Hackathon</span>
+    </footer>
+
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>
