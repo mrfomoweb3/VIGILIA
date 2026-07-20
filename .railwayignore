@@ -1,0 +1,10 @@
+# Keep the deploy upload small — the Dockerfile runs `npm ci` and `npm run build`
+# inside the image, so none of this needs to travel.
+node_modules
+dist
+.git
+.env
+*.log
+.DS_Store
+demo
+test

@@ -27,7 +27,12 @@
       "Bash(curl -s -X POST http://localhost:3000/api/check -H 'Content-Type: application/json' -d '{\"url\":\"https://www.google.com\"}')",
       "Bash(python3 -c ' *)",
       "Bash(cp __TRACKED_VAR__/phish.png demo/phishing-sample.png)",
-      "Bash(cp __TRACKED_VAR__/phish.html demo/phishing-sample.html)"
+      "Bash(cp __TRACKED_VAR__/phish.html demo/phishing-sample.html)",
+      "Bash(git -c user.name=Diacreate -c user.email=samuelsuccess234@gmail.com commit -q -m ' *)",
+      "Bash(curl -s -o /dev/null -w \"  status=%{http_code} time=%{time_total}s\\\\n\" --max-time 20 https://backboard.railway.com/)",
+      "Bash(curl -s -o /dev/null -w \"  status=%{http_code} time=%{time_total}s\\\\n\" --max-time 20 https://railway.com/)",
+      "Read(//dev/**)",
+      "Bash(curl -s -o /dev/null -w \"  status=%{http_code} time=%{time_total}s\\\\n\" --max-time 45 -X POST --data-binary @- https://httpbin.org/post)"
     ]
   }
 }
