@@ -35,14 +35,21 @@ Assets in this folder:
 
 > "Here's a PayPal email. Looks real. Watch."
 
-**Let the verdict stamp in. Pause on it.** Then point at the sender domain:
+**Let the verdict stamp in. Pause on it.** Then point at the **typosquat evidence row**
+(not the verdict word):
 
 > "That's not PayPal. It's p-a-y-p-a-**one**. A digit, not an L. Vigilia read the
 > screenshot, pulled the link out, and caught the lookalike."
 
 **Verified output:**
-- `VERDICT: CONFIRMED SCAM`
+- Verdict: **`SUSPICIOUS` or `CONFIRMED SCAM`** — both are correct here
 - `typosquat: FLAGGED — paypa1-secure.com uses lookalike characters to imitate "paypal"`
+
+> ⚠️ **Don't script the verdict word for this shot.** Safe Browsing hasn't
+> catalogued this domain, so the deterministic floor is SUSPICIOUS and the model
+> may go higher. The *evidence row* is deterministic and always reads the same —
+> narrate that. If you want a guaranteed `CONFIRMED SCAM` on camera, use the
+> Safe Browsing test URL from the appendix instead, where the hard rule forces it.
 
 ---
 
@@ -86,6 +93,20 @@ Assets in this folder:
 
 ---
 
+## Appendix — guaranteed `CONFIRMED SCAM` input
+
+If you want the strongest verdict word on camera, use Google's official Safe
+Browsing test URL. Safe Browsing flags it, and the hard rule forces
+`CONFIRMED_SCAM` in code every time:
+
+```
+http://malware.testing.google.test/testing/malware/
+```
+
+**Verified live output:** `CONFIRMED SCAM`, `safe_browsing: FLAGGED`.
+
+---
+
 ## Recording notes
 
 - **Do not speed up the verdict.** The 3–5s wait is the product doing real
@@ -126,7 +147,7 @@ so X doesn't linkify it.)*
 
 | Claim | Status |
 |---|---|
-| Reads screenshots, extracts links | ✅ verified on real vision API |
+| Reads screenshots, extracts links | ✅ verified live in production |
 | Catches `paypa1-secure.com` lookalike | ✅ verified |
 | Catches `gtbank-secure.com` | ✅ verified |
 | `google.com` → SAFE / high | ✅ verified |

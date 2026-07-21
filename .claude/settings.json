@@ -33,7 +33,15 @@
       "Bash(curl -s -o /dev/null -w \"  status=%{http_code} time=%{time_total}s\\\\n\" --max-time 20 https://railway.com/)",
       "Read(//dev/**)",
       "Bash(curl -s -o /dev/null -w \"  status=%{http_code} time=%{time_total}s\\\\n\" --max-time 45 -X POST --data-binary @- https://httpbin.org/post)",
-      "Bash(gh repo *)"
+      "Bash(gh repo *)",
+      "Bash(git branch *)",
+      "Bash(GIT_HTTP_LOW_SPEED_LIMIT=1000 GIT_HTTP_LOW_SPEED_TIME=120 git push -u origin main)",
+      "Bash(railway --help)",
+      "Bash(railway domain *)",
+      "Bash(curl -s -o /dev/null -w \"  HTTP %{http_code} in %{time_total}s\\\\n\" --max-time 30 https://vigilia-production-f7de.up.railway.app/api/health)",
+      "Bash(curl -s --max-time 30 https://vigilia-production-f7de.up.railway.app/api/health)",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\(f\\\\\"  verdict={d['verdict']} confidence={d['confidence']}\\\\\"\\);[print\\(f\\\\\"    {e['signal']}: {e['result']}\\\\\"\\) for e in d['evidence']]\")",
+      "Bash(grep -qE '\\(^|/\\)\\\\.env$')"
     ]
   }
 }

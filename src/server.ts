@@ -20,6 +20,13 @@ const PRICE_PER_CHECK_USDT = process.env.PRICE_PER_CHECK_USDT ?? "0.2";
 const VERSION = "1.0.0";
 
 const app = express();
+
+// Railway (and every PaaS) puts a reverse proxy in front of the app. Without
+// this, req.ip is the proxy's address — so every visitor would share a single
+// rate-limit bucket, letting one caller lock everyone else out. Trusting the
+// first hop makes req.ip the real client from X-Forwarded-For.
+app.set("trust proxy", 1);
+
 app.use(express.json({ limit: "256kb" }));
 
 // Screenshot upload: in-memory, 5 MB cap, single file field "screenshot".
