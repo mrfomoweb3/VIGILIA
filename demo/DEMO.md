@@ -30,20 +30,43 @@ terminal shot at the end.
 
 ---
 
-## Shot list
+## What this video is judged on
 
-### 0:00–0:08 — Hook
-**On screen:** Vigilia landing page, hero visible.
+Two things only:
 
-> "Everyone says *don't click suspicious links*. Nobody tells you how to actually
-> tell. Vigilia does — in about five seconds, for a fifth of a cent."
+1. **Idea — sell the story in 10 seconds.** The first sentence has to land the
+   problem and the twist. If a judge stops watching at 0:10, they should still
+   be able to repeat what Vigilia is.
+2. **Degree of execution.** Depth of the build, not visual polish. **Do not
+   spend seconds admiring the page.** Every shot below exists to prove either
+   the idea or the engineering behind it.
+
+**Cut from the old script:** slow scrolling, UI appreciation, the "no false
+alarms" google.com shot. They cost 15 seconds and prove nothing a judge scores.
 
 ---
 
-### 0:08–0:30 — The catch (the money shot)
+## Shot list
+
+### 0:00–0:10 — THE IDEA (the whole pitch, in one breath)
+**On screen:** the phishing screenshot already open, full frame. No page tour.
+
+> "Your bank texts you. It looks real. It isn't — the web address is a digit,
+> not a letter. Vigilia catches that in five seconds, and shows you the
+> receipts. It doesn't ask an AI if something looks scammy. It runs real
+> security checks."
+
+> 💡 Why this works: problem everyone recognises → the twist (a *digit*, not a
+> letter) → the credibility claim (not an AI guessing). A judge who stops here
+> can still repeat the idea.
+
+---
+
+### 0:10–0:30 — EXECUTION: it reads a screenshot and catches the lookalike
 **On screen:** Drag `phishing-sample.png` onto the drop zone → click **RUN CHECK**.
 
-> "Here's a PayPal email. Looks real. Watch."
+> "No link to paste — this is just a screenshot. It reads the image, pulls the
+> address out, and checks it."
 
 **Let the verdict stamp in. Pause on it.** Then point at the **typosquat evidence row**
 (not the verdict word):
@@ -63,39 +86,43 @@ terminal shot at the end.
 
 ---
 
-### 0:30–0:50 — Why it's trustworthy
-**On screen:** Scroll the evidence rows slowly.
+### 0:30–0:50 — EXECUTION: the architecture (the part engineers score)
+**On screen:** the evidence rows. Point at them; don't scroll slowly.
 
-> "This is the part that matters. The verdict didn't come from an AI's opinion —
-> it came from deterministic checks: Google Safe Browsing, domain registration
-> age, brand-impersonation distance. The AI only writes the explanation.
-> Notice the middle row: WHOIS didn't answer, so it says *unknown* and the
-> confidence drops. It doesn't guess."
+> "The AI never decides. Google Safe Browsing, domain age, brand-impersonation
+> distance, sender authentication — those produce signals, and hard rules in
+> code pick the verdict. If the model disagrees, the code overrules it.
+> And look at that middle row: WHOIS didn't answer, so it says **unknown** and
+> the confidence drops. It never guesses and calls it clean."
+
+> 💡 This is the strongest execution beat in the video. Two things judges rarely
+> see: **deterministic rules overriding the model**, and a system that **admits
+> what it couldn't verify** instead of faking confidence.
 
 ---
 
-### 0:50–1:05 — The regional edge
+### 0:50–1:05 — IDEA: who it's actually for
 **On screen:** Clear the box, paste `https://gtbank-secure.com/verify` → **RUN CHECK**.
 
-> "And it isn't only built for Silicon Valley brands. GTBank, Kuda, OPay,
-> Moniepoint, Flutterwave, Paystack, MTN — the brands people actually get
-> phished with in Nigeria."
+> "And it isn't built for Silicon Valley brands. GTBank, Kuda, OPay, Moniepoint,
+> Flutterwave, Paystack, MTN — 106 brands, weighted to where people actually
+> get phished. That's a different product, not a different logo."
 
 **Verified output:** `SUSPICIOUS`, typosquat flagged against GTBank.
 
----
-
-### 1:05–1:18 — No false alarms
-**On screen:** Paste `https://www.google.com` → **RUN CHECK**.
-
-> "And it doesn't cry wolf. Clean link, clean verdict — registered 1997, nothing
-> flagged, high confidence."
-
-**Verified output:** `SAFE`, `high` confidence, *"registered 1997-09-15 (~28.9 years ago)"*.
+> 💡 This is the second half of the idea, and it's genuinely differentiated —
+> most scam detectors only know US brands. Don't cut this one.
 
 ---
 
-### 1:18–1:30 — Close (the differentiator)
+### ~~1:05–1:18 — No false alarms~~ ❌ CUT THIS SHOT
+The `google.com` → SAFE shot proves nothing a judge scores. It costs 13
+seconds and shows the product *not* doing anything. Spend the time on the
+close instead. (It stays in the appendix if you ever need it for a longer cut.)
+
+---
+
+### 1:05–1:30 — EXECUTION: it's a real paid endpoint, on-chain
 **On screen:** Split/cut to a terminal, run:
 
 ```bash
@@ -104,15 +131,18 @@ onchainos payment quote https://vigilia-production-f7de.up.railway.app/api/check
 
 Let the output land — it prints `Will pay 0.2 USD₮0 (exact, X Layer)`.
 
-> "And it's a real paid endpoint. That's the live x402 challenge on X Layer —
-> an agent can discover it, pay 0.2 USDT, and get a verdict back. No account,
-> no subscription, nothing stored."
+> "And this isn't a website with a demo button. It's a paid endpoint any agent
+> can call — that's the live x402 challenge on X Layer. Discover it, pay two
+> tenths of a USDT, get a verdict. No account. Nothing stored."
 
 **Verified output:** `ok: true`, `"summary": "Will pay 0.2 USD₮0 (exact, X Layer)"`.
 
-> 💡 This beat is worth the 10 seconds — it proves the thing most submissions
-> only claim: that the service is genuinely callable and priced on-chain, not
-> just a website. If you're tight on time, cut the `google.com` shot instead.
+> 💡 **Strongest execution proof in the video.** Most submissions *claim* to be
+> an agent service; this shows the payment protocol answering live, in their own
+> tooling. Let the terminal output sit on screen for a beat — judges read it.
+
+**Optional last line, only if the listing is approved by recording time:**
+> "It's live on OKX.AI as agent 7072."
 
 ---
 
@@ -143,26 +173,37 @@ http://malware.testing.google.test/testing/malware/
 
 ## X post copy
 
-> Meet Vigilia — a pay-per-check scam detector, live as an ASP on OKX.AI.
->
-> Paste a link, an email, or a screenshot. Get a verdict with the evidence
-> behind it.
->
-> The part I care about: the AI never judges. Google Safe Browsing, WHOIS
-> domain age, and brand-impersonation checks decide — the model only explains
-> the result in plain language. If a check fails, it says so instead of
-> guessing.
->
-> It catches lookalike domains too: paypa1-secure[.]com is a digit 1, not an L.
-> And it covers the brands people actually get phished with in Nigeria —
-> GTBank, Kuda, OPay, Moniepoint, Flutterwave, Paystack.
->
-> 0.2 USDT per check. No account. Nothing stored.
->
-> #OKXAI
+**The first line is the whole pitch — it has to work alone in a timeline.**
 
-*(Attach the ≤90s demo video. Defang the scam domain as `paypa1-secure[.]com`
-so X doesn't linkify it.)*
+> That "bank" text isn't from your bank. The web address has a digit where a
+> letter should be: paypa1[.]com, not paypal.
+>
+> I built Vigilia to catch that in 5 seconds and show you the receipts.
+>
+> Send it a link, an email, or just a screenshot. It reads the image, pulls the
+> address out, and runs real security checks — Google Safe Browsing, how old the
+> domain is, whether it imitates a real brand, whether the sender is forged.
+>
+> The AI never decides. Deterministic rules pick the verdict in code; if the
+> model disagrees, the code overrules it. And when a check can't complete, it
+> says "unknown" and lowers its confidence instead of guessing.
+>
+> It knows 106 brands, weighted to where people actually get phished — GTBank,
+> Kuda, OPay, Moniepoint, Flutterwave, Paystack, MTN — not just US logos.
+>
+> It's a real paid endpoint, not a demo page: agents discover it and pay 0.2
+> USDT per check over x402 on X Layer. No account. Nothing stored.
+>
+> Built for #OKXAI
+
+*(Attach the ≤90s demo video. Defang scam domains as `paypa1[.]com` so X
+doesn't linkify them.)*
+
+**Before posting, check two things:**
+1. **"Built for #OKXAI"** → change to **"Live on OKX.AI"** only once the listing
+   is approved. Until then the current wording is the true one.
+2. If you need it shorter, cut the 106-brands paragraph — **never** the opening
+   two lines. Those are the idea; everything else is supporting evidence.
 
 ---
 
