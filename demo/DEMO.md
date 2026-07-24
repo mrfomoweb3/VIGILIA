@@ -9,9 +9,19 @@ Assets in this folder:
 
 ---
 
+## Architecture note (why two routes)
+
+- **`/api/check`** — the endpoint registered on-chain. **x402 payment-gated**: a GET
+  returns a 402 challenge; a paid POST returns the verdict. This is what agents call.
+- **`/api/demo`** — same engine, **free**, no payment. This is what the website's
+  RUN CHECK button uses, so anyone can try it live.
+
+The demo shows the free route (the website) and *proves* the paid route with the
+terminal shot at the end.
+
 ## Pre-flight (do this before recording)
 
-- [ ] `npm run build && npm start`, or point at the deployed URL
+- [ ] Use the live URL: **https://vigilia-production-f7de.up.railway.app**
 - [ ] `curl .../api/health` → `status: ok`, `remainingUsd` > 0
 - [ ] Browser at ~1280px wide, zoom 100%, **light mode**
 - [ ] Hide bookmarks bar and any personal tabs
@@ -85,11 +95,24 @@ Assets in this folder:
 
 ---
 
-### 1:18–1:30 — Close
-**On screen:** Scroll to the pricing section.
+### 1:18–1:30 — Close (the differentiator)
+**On screen:** Split/cut to a terminal, run:
 
-> "Zero point two USDT per check. No account, no subscription, nothing stored.
-> Vigilia — on OKX.AI."
+```bash
+onchainos payment quote https://vigilia-production-f7de.up.railway.app/api/check
+```
+
+Let the output land — it prints `Will pay 0.2 USD₮0 (exact, X Layer)`.
+
+> "And it's a real paid endpoint. That's the live x402 challenge on X Layer —
+> an agent can discover it, pay 0.2 USDT, and get a verdict back. No account,
+> no subscription, nothing stored."
+
+**Verified output:** `ok: true`, `"summary": "Will pay 0.2 USD₮0 (exact, X Layer)"`.
+
+> 💡 This beat is worth the 10 seconds — it proves the thing most submissions
+> only claim: that the service is genuinely callable and priced on-chain, not
+> just a website. If you're tight on time, cut the `google.com` shot instead.
 
 ---
 
@@ -154,5 +177,11 @@ so X doesn't linkify it.)*
 | Safe Browsing / WHOIS / typosquat are deterministic | ✅ rules override the model in code |
 | Says "unknown" instead of guessing | ✅ verified (WHOIS failure path) |
 | Nothing submitted is stored | ✅ no persistence beyond request lifecycle |
-| 0.2 USDT per check | ⚠️ **only say this once the OKX listing is live** |
-| "live as an ASP on OKX.AI" | ⚠️ **only after the listing is approved** |
+| "a real paid endpoint / x402 on X Layer" | ✅ verified — `payment quote` returns ok:true |
+| 0.2 USDT per check | ✅ that's the advertised x402 price (0.2 USD₮0) |
+| "live as an ASP on OKX.AI" | ⚠️ **only after approval — still under review** |
+
+> ⚠️ **The one line to hold back.** Everything above is true *right now* except
+> being listed on OKX.AI. Until the status flips to approved, say **"built for
+> #OKXAI"** instead of "live on OKX.AI" — in both the video and the X post.
+> Line 146 of the X copy below needs that edit if you post before approval.
