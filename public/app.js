@@ -163,11 +163,11 @@
       if (selectedFile) {
         const fd = new FormData();
         fd.append("screenshot", selectedFile);
-        res = await fetch("/api/check", { method: "POST", body: fd });
+        res = await fetch("/api/demo", { method: "POST", body: fd });
       } else {
         const looksLikeUrl = /^https?:\/\/\S+$/i.test(text) || /^[\w-]+(\.[\w-]+)+\S*$/i.test(text);
         const body = looksLikeUrl && !/\s/.test(text) ? { url: text } : { emailText: text };
-        res = await fetch("/api/check", {
+        res = await fetch("/api/demo", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),

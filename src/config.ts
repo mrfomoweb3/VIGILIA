@@ -51,6 +51,60 @@ function bool(name: string, fallback: boolean): boolean {
   return raw.trim().toLowerCase() === "true";
 }
 
+function str(name: string, fallback = ""): string {
+  const raw = process.env[name];
+  return raw === undefined || raw.trim() === "" ? fallback : raw.trim();
+}
+
+/**
+ * x402 seller-side config for the A2MCP marketplace endpoint (/api/check).
+ * Values mirror the OKX marketplace's XLayer setup: USD₮0, eip155:196, 6 decimals.
+ * Defaults are the canonical on-chain values so the endpoint is conformant even
+ * before any env is set; override per-deploy as needed.
+ */
+export const x402 = {
+  /** Price advertised in the 402 challenge (human USD/USDT). */
+  get priceUsd(): number {
+    return num("PRICE_PER_CHECK_USDT", 0.2);
+  },
+  /** CAIP-2 network — XLayer mainnet. */
+  get network(): string {
+    return str("X402_NETWORK", "eip155:196");
+  },
+  /** Canonical XLayer USD₮0 contract (same token the marketplace uses). */
+  get assetUsdt(): string {
+    return str("X402_ASSET_USDT", "0x779ded0c9e1022225f8e0630b35a9b54be713736");
+  },
+  get assetDecimals(): number {
+    return num("X402_ASSET_DECIMALS", 6);
+  },
+  /** EIP-712 domain the buyer needs to sign the EIP-3009 authorization. */
+  get assetName(): string {
+    return str("X402_ASSET_NAME", "USD₮0");
+  },
+  get assetVersion(): string {
+    return str("X402_ASSET_VERSION", "1");
+  },
+  /** Wallet that receives payment — the agent's owner address. */
+  get payTo(): string {
+    return str("X402_PAYTO_ADDRESS", str("WALLET_ADDRESS"));
+  },
+  /**
+   * "sandbox" — return a conformant 402 and admit any well-formed payment proof
+   * without on-chain settlement (dev/demo; matches the approved reference agent).
+   * "production" — verify + settle via the facilitator, fail-closed.
+   */
+  get mode(): string {
+    return str("X402_MODE", "sandbox");
+  },
+  get facilitatorUrl(): string {
+    return str("X402_FACILITATOR_URL");
+  },
+  get facilitatorApiKey(): string {
+    return str("X402_FACILITATOR_API_KEY");
+  },
+};
+
 /**
  * Cost guardrails. Defaults are deliberately conservative — this service is
  * expected to run on a small prepaid balance, and a public endpoint with an

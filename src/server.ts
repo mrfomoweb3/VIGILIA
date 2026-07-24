@@ -9,7 +9,16 @@ import { runCheck, PipelineError, type CheckInput } from "./pipeline/index.js";
 import { AnthropicLLMClient } from "./pipeline/reason.js";
 import { checkRateLimit } from "./ratelimit.js";
 import { snapshot } from "./budget.js";
-import { MODEL, guardrails } from "./config.js";
+import { MODEL, guardrails, x402 } from "./config.js";
+import {
+  PAYMENT_REQUIRED_HEADER,
+  PAYMENT_RESPONSE_HEADER,
+  buildPaymentRequired,
+  buildPaymentResponse,
+  paymentRequiredBody,
+  readPaymentHeader,
+  verifyPaymentAuthorization,
+} from "./x402/x402.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(__dirname, "..", "public");
@@ -38,20 +47,25 @@ const upload = multer({
 // Shared LLM client (reused across requests).
 const llm = new AnthropicLLMClient();
 
-// ---- Payment gating (ASP layer) ---------------------------------------------
-// Placeholder until the OKX.AI ASP billing/invocation format is wired in.
-// The OKX.AI marketplace fronts the actual payment; this middleware just
-// enforces the flag and shape. DO NOT invent the OKX integration here — read
-// their current ASP developer docs at integration time (see BUILD.md §3.6).
-function requirePayment(req: Request, res: Response, next: NextFunction) {
-  if (!PAYMENTS_ENABLED) return next();
-  // A real integration validates a payment-proof header issued by the
-  // marketplace. Until that spec is read, require its presence and 402 without.
-  const proof = req.header("X-Payment-Proof") ?? req.header("X-PAYMENT");
-  if (!proof) {
-    return res.status(402).json({ error: "Payment required" });
-  }
-  return next();
+// ---- x402 payment gating (A2MCP marketplace endpoint) -----------------------
+// /api/check is the endpoint registered on-chain as an A2MCP service. Per the
+// x402 protocol it must NEVER 404: any unpaid call (including a GET from a
+// browser, an OKX review probe, or x402 discovery) gets a conformant 402
+// carrying the PAYMENT-REQUIRED challenge. A call with a valid payment proof
+// runs the check and returns 200 + PAYMENT-RESPONSE.
+
+/** Absolute URL of this resource, as advertised in the challenge. */
+function resourceUrl(req: Request): string {
+  const base =
+    process.env.PUBLIC_BASE_URL?.replace(/\/$/, "") ??
+    `${req.protocol}://${req.get("host")}`;
+  return `${base}/api/check`;
+}
+
+/** Send the 402 challenge (header + human-readable body). */
+function sendPaymentRequired(req: Request, res: Response) {
+  res.setHeader(PAYMENT_REQUIRED_HEADER, buildPaymentRequired(resourceUrl(req)));
+  return res.status(402).json(paymentRequiredBody());
 }
 
 // ---- Routes -----------------------------------------------------------------
@@ -93,42 +107,68 @@ function rateLimit(req: Request, res: Response, next: NextFunction) {
   return next();
 }
 
+/** Shared check handler — used by both the paid and the free-demo route. */
+async function handleCheck(req: Request, res: Response) {
+  try {
+    const input: CheckInput = {};
+
+    if (req.file) {
+      input.screenshot = { buffer: req.file.buffer, mimetype: req.file.mimetype };
+    } else {
+      const body = req.body ?? {};
+      if (typeof body.url === "string") input.url = body.url;
+      if (typeof body.emailText === "string") input.emailText = body.emailText;
+    }
+
+    if (!input.screenshot && !input.url && !input.emailText) {
+      return res.status(400).json({ error: "No link or email content found in input." });
+    }
+
+    const result = await runCheck(input, { llm });
+    return res.status(200).json(result);
+  } catch (err) {
+    if (err instanceof PipelineError) {
+      return res.status(err.status).json({ error: err.message });
+    }
+    console.error("Unhandled check error:", err);
+    return res
+      .status(500)
+      .json({ error: "Something went wrong running the check. Please try again." });
+  }
+}
+
+// ---- /api/check — the A2MCP endpoint registered on-chain (x402-gated) --------
+
+// Discovery/probe. An A2MCP resource must never 404: a GET returns the same
+// conformant 402 challenge that OKX's review probe and x402 discovery expect.
+app.get("/api/check", (req, res) => sendPaymentRequired(req, res));
+
 app.post(
   "/api/check",
   rateLimit,
-  requirePayment,
   upload.single("screenshot"),
   async (req: Request, res: Response) => {
-    try {
-      const input: CheckInput = {};
+    const proof = readPaymentHeader((n) => req.header(n));
+    if (!proof) return sendPaymentRequired(req, res);
 
-      if (req.file) {
-        input.screenshot = { buffer: req.file.buffer, mimetype: req.file.mimetype };
-      } else {
-        const body = req.body ?? {};
-        if (typeof body.url === "string") input.url = body.url;
-        if (typeof body.emailText === "string") input.emailText = body.emailText;
-      }
-
-      if (!input.screenshot && !input.url && !input.emailText) {
-        return res
-          .status(400)
-          .json({ error: "No link or email content found in input." });
-      }
-
-      const result = await runCheck(input, { llm });
-      return res.status(200).json(result);
-    } catch (err) {
-      if (err instanceof PipelineError) {
-        return res.status(err.status).json({ error: err.message });
-      }
-      console.error("Unhandled /api/check error:", err);
-      return res
-        .status(500)
-        .json({ error: "Something went wrong running the check. Please try again." });
+    const payment = await verifyPaymentAuthorization(proof, resourceUrl(req));
+    if (!payment) {
+      res.setHeader(PAYMENT_REQUIRED_HEADER, buildPaymentRequired(resourceUrl(req)));
+      return res.status(402).json({
+        error: "payment_invalid",
+        message: "Payment could not be verified. Retry with a fresh payment.",
+      });
     }
+
+    res.setHeader(PAYMENT_RESPONSE_HEADER, buildPaymentResponse(payment));
+    return handleCheck(req, res);
   },
 );
+
+// ---- /api/demo — free public demo powering the landing page ------------------
+// Same engine, no payment. Protected by the per-IP rate limit and the daily
+// budget cap so a public free endpoint can't drain the API balance.
+app.post("/api/demo", rateLimit, upload.single("screenshot"), handleCheck);
 
 // Multer / body errors (e.g. file too large) rendered as clean 400s.
 app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
@@ -153,15 +193,20 @@ app.get("/", (_req, res) => {
   res.sendFile(join(PUBLIC_DIR, "index.html"));
 });
 app.get("/api/config", (_req, res) => {
-  res.json({ pricePerCheckUsdt: PRICE_PER_CHECK_USDT, paymentsEnabled: PAYMENTS_ENABLED });
+  res.json({
+    pricePerCheckUsdt: PRICE_PER_CHECK_USDT,
+    paymentsEnabled: PAYMENTS_ENABLED,
+    x402: { network: x402.network, mode: x402.mode },
+  });
 });
 app.use(express.static(PUBLIC_DIR));
 
 app.listen(PORT, () => {
   console.log(
-    `Vigilia v${VERSION} listening on http://localhost:${PORT} — payments ${
-      PAYMENTS_ENABLED ? "ON" : "OFF"
-    }, price ${PRICE_PER_CHECK_USDT} USDT/check`,
+    `Vigilia v${VERSION} on :${PORT} — /api/check x402-gated ` +
+      `(${x402.mode}, ${x402.priceUsd} ${x402.assetName}, ${x402.network}, payTo ${
+        x402.payTo || "UNSET"
+      }); /api/demo free`,
   );
 });
 

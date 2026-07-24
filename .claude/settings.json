@@ -41,7 +41,40 @@
       "Bash(curl -s -o /dev/null -w \"  HTTP %{http_code} in %{time_total}s\\\\n\" --max-time 30 https://vigilia-production-f7de.up.railway.app/api/health)",
       "Bash(curl -s --max-time 30 https://vigilia-production-f7de.up.railway.app/api/health)",
       "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\(f\\\\\"  verdict={d['verdict']} confidence={d['confidence']}\\\\\"\\);[print\\(f\\\\\"    {e['signal']}: {e['result']}\\\\\"\\) for e in d['evidence']]\")",
-      "Bash(grep -qE '\\(^|/\\)\\\\.env$')"
+      "Bash(grep -qE '\\(^|/\\)\\\\.env$')",
+      "Bash(onchainos upgrade *)",
+      "Bash(curl -s -o /dev/null -w '  status=%{http_code} time=%{time_total}s\\\\n' --max-time 45 -X POST --data-binary @- https://httpbin.org/post)",
+      "Bash(npx skills *)",
+      "Bash(onchainos agent *)",
+      "Bash(command -v okx-a2a)",
+      "Bash(npm i *)",
+      "Bash(okx-a2a doctor *)",
+      "Bash(okx-a2a --help)",
+      "Bash(okx-a2a daemon *)",
+      "Bash(python3 -c \"import sys,json;b=json.load\\(sys.stdin\\)['budget'];print\\(f\\\\\"  day={b['day']} calls={b['calls']} spent=\\\\${b['spentUsd']} remaining=\\\\${b['remainingUsd']}\\\\\"\\)\")",
+      "Bash(curl -s -o /dev/null -w 'health: HTTP %{http_code} in %{time_total}s\\\\n' --max-time 30 https://vigilia-production-f7de.up.railway.app/api/health)",
+      "Bash(python3 -c \"import sys,json;b=json.load\\(sys.stdin\\)['budget'];print\\(f\\\\\"budget: day={b['day']} spent=\\\\${b['spentUsd']} remaining=\\\\${b['remainingUsd']}\\\\\"\\)\")",
+      "Bash(python3 -c \"import datetime;print\\('  ',datetime.datetime.utcfromtimestamp\\(1784636584255/1000\\).strftime\\('%Y-%m-%d %H:%M UTC'\\)\\)\")",
+      "Bash(echo \"== is it up right now? ==\")",
+      "Bash(curl -s -o /dev/null -w '  /api/health  GET  -> %{http_code}\\\\n' --max-time 20 https://vigilia-production-f7de.up.railway.app/api/health)",
+      "Bash(echo \"\")",
+      "Bash(echo \"== how does the ENDPOINT respond to each method OKX might probe? ==\")",
+      "Bash(curl -s -o /dev/null -w '  /api/check    GET     -> %{http_code}\\\\n' --max-time 20 https://vigilia-production-f7de.up.railway.app/api/check)",
+      "Bash(onchainos payment *)",
+      "Bash(node scripts/a2a_check.mjs --url \"https://gtbank-secure.com/verify\")",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('ok:',d['ok'],'verdict:',d['verdict']\\);print\\('--- deliveryMessage ---'\\);print\\(d['deliveryMessage'][:400]\\)\")",
+      "Bash(node scripts/a2a_check.mjs --email \"Your account will be suspended in 24 hours. Verify at https://paypa1-secure.com/login\")",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('ok:',d['ok'],'verdict:',d['verdict']\\)\")",
+      "Bash(node scripts/a2a_check.mjs --screenshot demo/phishing-sample.png)",
+      "Bash(node scripts/a2a_check.mjs)",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('ok:',d['ok'],'error:',d['error'][:60]\\)\")",
+      "Bash(echo \"no-input exit code: $?\")",
+      "Bash(curl -s -o /dev/null -w '  GET  -> %{http_code}\\\\n' --max-time 20 https://aval-production-90c5.up.railway.app/v1/audit)",
+      "Bash(curl -s -o /dev/null -w '  POST -> %{http_code}\\\\n' --max-time 20 -X POST -H 'Content-Type: application/json' -d '{}' https://aval-production-90c5.up.railway.app/v1/audit)",
+      "Bash(grep -vE \"^#|^$\")"
+    ],
+    "additionalDirectories": [
+      "/Users/macbook/.claude"
     ]
   }
 }
