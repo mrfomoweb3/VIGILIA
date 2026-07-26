@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vigilia — motion graphics explainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --ink:#101010; --cream:#f6f3ea; --purple:#b79cec; --purple2:#9a78e3;
+  --lime:#c8f94e; --alert:#ff4a2e; --caution:#ffc53d; --safe:#35c989;
+  --bd:3px solid var(--ink);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:#0a0a0a;overflow:hidden;font-family:"Poppins",sans-serif}
+#stage{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:1280px;height:720px;background:var(--cream);color:var(--ink);overflow:hidden}
+.mono{font-family:"IBM Plex Mono",monospace}
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;opacity:0;visibility:hidden;padding:70px;text-align:center}
+.scene.on{opacity:1;visibility:visible}
+.kh{font-weight:800;line-height:1.02;letter-spacing:-.01em}
+.kh .word{display:inline-block;opacity:0;transform:translateY(40px);filter:blur(6px)}
+.scene.on .kh .word{animation:wordIn .55s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes wordIn{to{opacity:1;transform:none;filter:none}}
+.hl{background:var(--lime);border:var(--bd);box-shadow:5px 5px 0 var(--ink);
+  padding:0 .18em;display:inline-block;transform:rotate(-3deg)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* ---------- HOOK (scene 0) ---------- */
+#s0{background:#111;color:#f6f3ea;justify-content:flex-start;padding-top:70px}
+#s0 .hookline{font-weight:800;font-size:34px;line-height:1.18;max-width:1000px}
+#s0 .hookline .word{filter:none;transform:translateY(24px)}
+#s0 .stagearea{position:relative;width:760px;height:360px;margin-top:34px}
+.card{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  opacity:0;transform:scale(1.05);filter:grayscale(.25) contrast(1.08);
+  transition:opacity .13s ease, transform .5s cubic-bezier(.2,.7,.2,1)}
+.card.active{opacity:1;transform:scale(1)}
+.card .warn{position:absolute;top:14px;right:14px;background:var(--alert);color:#fff;
+  font-weight:800;font-size:15px;padding:6px 12px;border:2px solid #fff;letter-spacing:.05em;z-index:3}
+/* address-style card */
+.acard{background:var(--cream);color:var(--ink);border:var(--bd);box-shadow:10px 10px 0 #000;
+  padding:38px 46px;font-family:"IBM Plex Mono",monospace;font-size:46px;font-weight:600;
+  display:flex;align-items:center;gap:0;position:relative}
+.acard .bad{color:var(--alert);position:relative;display:inline-block}
+.acard .bad::after{content:"";position:absolute;inset:-8px -6px;border:3px solid var(--alert);border-radius:50%}
+.acard .cap{position:absolute;bottom:-30px;left:0;right:0;text-align:center;font-family:"Poppins";
+  font-size:15px;font-weight:700;color:#bbb;letter-spacing:.03em}
+/* screenshot card */
+.shot{width:100%;height:100%;border:var(--bd);box-shadow:10px 10px 0 #000;background:#2a2a2a;
+  position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.shot img{width:100%;height:100%;object-fit:cover;display:block}
+.shot .ph{position:absolute;color:#888;font-weight:700;font-size:22px;font-family:"IBM Plex Mono";
+  text-align:center;line-height:1.5;letter-spacing:.05em}
+
+/* ---------- SCENE 1 — the tell ---------- */
+#s1 .addr{font-size:58px;font-weight:600;border:var(--bd);background:#fff;
+  box-shadow:8px 8px 0 var(--ink);padding:26px 40px;position:relative;overflow:hidden}
+#s1 .scan{position:absolute;top:0;left:-30%;width:22%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,74,46,.55),transparent)}
+.scene.on #s1anchor .scan{animation:scan 1.15s ease-in-out .35s 1 forwards}
+@keyframes scan{0%{left:-30%}100%{left:120%}}
+#s1 .digit{display:inline-block;position:relative;color:var(--alert)}
+#s1 .ring{position:absolute;inset:-14px -10px;border:4px solid var(--alert);border-radius:50%;opacity:0;transform:scale(.4)}
+.scene.on #s1anchor .ring{animation:ring .5s cubic-bezier(.2,.9,.2,1) 1.5s forwards}
+@keyframes ring{60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+.scene.on #s1anchor .digit{animation:digitPop .5s ease 1.5s forwards}
+@keyframes digitPop{50%{transform:scale(1.6) translateY(-6px)}100%{transform:scale(1.3)}}
+#s1 .tag{margin-top:44px;font-size:30px;font-weight:800;opacity:0}
+.scene.on #s1anchor .tag{animation:fadeUp .5s ease 2.1s forwards}
+
+/* ---------- SCENE 2 — pipeline ---------- */
+.pipe{display:flex;align-items:center;gap:26px;margin-top:34px}
+.node{border:var(--bd);background:#fff;box-shadow:5px 5px 0 var(--ink);padding:16px 20px;font-weight:700;font-size:19px;min-width:96px}
+.checks{display:flex;flex-direction:column;gap:12px}
+.chk{border:var(--bd);background:#fff;box-shadow:4px 4px 0 var(--ink);padding:11px 16px;font-size:16px;
+  font-weight:600;display:flex;align-items:center;gap:10px;opacity:.25;transform:translateX(-14px)}
+.chk .dot{width:15px;height:15px;border:2px solid var(--ink);background:#fff;flex:none}
+.chk.lit{opacity:1;transform:none;transition:all .4s cubic-bezier(.2,.8,.2,1)}
+.chk.lit .dot{background:var(--safe);animation:pulse .6s ease}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(53,201,137,.7)}100%{box-shadow:0 0 0 12px rgba(53,201,137,0)}}
+.arrow{font-size:30px;font-weight:800;opacity:0}
+.arrow.show{opacity:1;transition:opacity .3s}
+.gear{width:96px;height:96px;border:var(--bd);border-radius:50%;background:var(--purple);box-shadow:5px 5px 0 var(--ink);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;text-align:center;line-height:1.1}
+.gear.spin{animation:spin 2.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.verdict{border:var(--bd);background:var(--alert);color:#fff;box-shadow:7px 7px 0 var(--ink);padding:18px 24px;
+  font-weight:800;font-size:24px;opacity:0;transform:scale(1.5) rotate(-8deg)}
+.verdict.slam{animation:slam .5s cubic-bezier(.2,1.4,.3,1) forwards}
+@keyframes slam{60%{opacity:1;transform:scale(.92) rotate(2deg)}100%{opacity:1;transform:scale(1) rotate(-2deg)}}
+
+/* ---------- SCENE 3 — confidence ---------- */
+.meter{width:360px;height:200px;position:relative;margin-top:20px}
+.meter svg{width:100%;height:100%;overflow:visible}
+.needle{transform-origin:180px 175px;transform:rotate(52deg);transition:transform 1.1s cubic-bezier(.5,0,.2,1)}
+.needle.low{transform:rotate(-52deg)}
+.unk{border:var(--bd);background:#fff;box-shadow:4px 4px 0 var(--ink);padding:10px 16px;font-weight:700;
+  font-size:18px;display:inline-flex;gap:10px;align-items:center;opacity:0;transform:translateY(14px)}
+.unk.show{animation:fadeUp .5s ease forwards}
+.unk .u{width:15px;height:15px;border:2px solid var(--ink);background:var(--caution)}
+.conf{font-weight:800;font-size:22px;margin-top:6px}
+
+/* ---------- SCENE 4 — brands ---------- */
+.chips{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:900px;margin-top:26px}
+.chip{border:var(--bd);background:#fff;box-shadow:4px 4px 0 var(--ink);padding:9px 16px;font-weight:700;
+  font-size:18px;opacity:0;transform:translateY(20px) scale(.9)}
+.chip.in{animation:chipIn .45s cubic-bezier(.2,1.3,.4,1) forwards}
+@keyframes chipIn{to{opacity:1;transform:none}}
+.counter{font-weight:800;font-size:96px;line-height:1;margin-top:10px}
+.counter .u{font-size:30px;font-weight:700;vertical-align:super;margin-left:8px}
+
+/* ---------- SCENE 5 — close (real ASP logo) ---------- */
+#s5 .logo-img{width:128px;height:128px;border:var(--bd);box-shadow:7px 7px 0 var(--ink);
+  object-fit:cover;opacity:0;transform:scale(.6)}
+.scene.on #s5anchor .logo-img{animation:slam .6s cubic-bezier(.2,1.3,.3,1) forwards}
+#s5 .name{font-weight:800;font-size:64px;letter-spacing:.02em;margin-top:22px;opacity:0}
+.scene.on #s5anchor .name{animation:wordIn .55s cubic-bezier(.2,.8,.2,1) .35s forwards}
+#s5 .live{margin-top:20px;border:var(--bd);background:var(--purple);box-shadow:6px 6px 0 var(--ink);
+  padding:14px 26px;font-weight:800;font-size:26px;opacity:0}
+.scene.on #s5anchor .live{animation:slam .55s cubic-bezier(.2,1.3,.3,1) .8s forwards}
+#s5 .sub{margin-top:16px;font-size:20px;font-weight:600;opacity:0}
+.scene.on #s5anchor .sub{animation:fadeUp .5s ease 1.3s forwards}
+
+#replay{position:absolute;bottom:16px;right:16px;z-index:50;font-family:"IBM Plex Mono",monospace;
+  font-size:12px;border:2px solid #555;background:#111;color:#ccc;padding:6px 12px;cursor:pointer}
+#hint{position:absolute;bottom:16px;left:16px;z-index:50;font-family:"IBM Plex Mono",monospace;font-size:12px;color:#666}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.001ms!important}}
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- SCENE 0 — HOOK montage -->
+  <section class="scene" id="s0"><div id="s0anchor" style="display:flex;flex-direction:column;align-items:center;width:100%">
+    <div class="hookline"><span class="word">You've</span> <span class="word">gotten</span> <span class="word">one</span> <span class="word">of</span> <span class="word">these.</span> <span class="word" style="color:var(--lime)">The</span> <span class="word" style="color:var(--lime)">tell</span> <span class="word" style="color:var(--lime)">is</span> <span class="word" style="color:var(--lime)">too</span> <span class="word" style="color:var(--lime)">small</span> <span class="word" style="color:var(--lime)">to</span> <span class="word" style="color:var(--lime)">see.</span></div>
+    <div class="stagearea" id="montage">
+      <!-- screenshot 1 -->
+      <div class="card" data-i="0"><div class="warn">SCAM</div>
+        <div class="shot"><img src="shot1.png" alt="" onerror="this.style.display='none'"><span class="ph">DROP shot1.png<br>(your screenshot)</span></div></div>
+      <!-- lookalike A -->
+      <div class="card" data-i="1"><div class="warn">⚠ FAKE</div>
+        <div class="acard">g<span class="bad">00</span>gle-verify.com<span class="cap">"00" — two zeros, not the letter O</span></div></div>
+      <!-- screenshot 2 -->
+      <div class="card" data-i="2"><div class="warn">SCAM</div>
+        <div class="shot"><img src="shot2.png" alt="" onerror="this.style.display='none'"><span class="ph">DROP shot2.png<br>(your screenshot)</span></div></div>
+      <!-- lookalike B -->
+      <div class="card" data-i="3"><div class="warn">⚠ FAKE</div>
+        <div class="acard">netfl<span class="bad">1</span>x-billing.com<span class="cap">"1" — a digit, not the letter i</span></div></div>
+      <!-- lookalike C -->
+      <div class="card" data-i="4"><div class="warn">⚠ FAKE</div>
+        <div class="acard">micr<span class="bad">0</span>soft-login.com<span class="cap">"0" — a zero, not the letter O</span></div></div>
+    </div>
+  </div></section>
+
+  <!-- SCENE 1 — the tell -->
+  <section class="scene" id="s1"><div id="s1anchor" style="display:flex;flex-direction:column;align-items:center">
+    <div class="kh" style="font-size:38px;margin-bottom:36px"><span class="word">One</span> <span class="word">character.</span> <span class="word">That's</span> <span class="word">all</span> <span class="word">it</span> <span class="word">takes.</span></div>
+    <div class="addr mono">paypa<span class="digit">1</span><span class="ring"></span>-secure.com<span class="scan"></span></div>
+    <div class="tag">A digit — not the letter L.</div>
+  </div></section>
+
+  <!-- SCENE 2 -->
+  <section class="scene" id="s2"><div id="s2anchor" style="display:flex;flex-direction:column;align-items:center">
+    <div class="kh" style="font-size:44px"><span class="word">The</span> <span class="word">AI</span> <span class="word">never</span> <span class="word"><span class="hl">decides.</span></span></div>
+    <div class="pipe">
+      <div class="node">INPUT</div><div class="arrow" id="a1">→</div>
+      <div class="checks">
+        <div class="chk" id="c1"><span class="dot"></span>Safe Browsing</div>
+        <div class="chk" id="c2"><span class="dot"></span>Domain age</div>
+        <div class="chk" id="c3"><span class="dot"></span>Brand impersonation</div>
+        <div class="chk" id="c4"><span class="dot"></span>Sender auth</div>
+      </div>
+      <div class="arrow" id="a2">→</div>
+      <div class="gear" id="gear">RULES<br>DECIDE</div>
+      <div class="arrow" id="a3">→</div>
+      <div class="verdict" id="v2">SCAM</div>
+    </div>
+    <div class="tag mono" style="margin-top:30px;font-size:18px;font-weight:600">Deterministic checks pick the verdict. The AI only explains it.</div>
+  </div></section>
+
+  <!-- SCENE 3 -->
+  <section class="scene" id="s3"><div id="s3anchor" style="display:flex;flex-direction:column;align-items:center">
+    <div class="kh" style="font-size:44px"><span class="word">It</span> <span class="word">won't</span> <span class="word">guess.</span></div>
+    <div class="meter">
+      <svg viewBox="0 0 360 200">
+        <path d="M40 175 A140 140 0 0 1 320 175" fill="none" stroke="#101010" stroke-width="6"/>
+        <path d="M40 175 A140 140 0 0 1 180 35" fill="none" stroke="#35c989" stroke-width="10"/>
+        <path d="M180 35 A140 140 0 0 1 320 175" fill="none" stroke="#ff4a2e" stroke-width="10"/>
+        <g class="needle" id="needle"><line x1="180" y1="175" x2="180" y2="60" stroke="#101010" stroke-width="7" stroke-linecap="round"/><circle cx="180" cy="175" r="12" fill="#101010"/></g>
+      </svg>
+    </div>
+    <div class="conf" id="conf">CONFIDENCE: HIGH</div>
+    <div class="unk" id="unk" style="margin-top:18px"><span class="u"></span>domain age: UNKNOWN — WHOIS didn't answer</div>
+  </div></section>
+
+  <!-- SCENE 4 -->
+  <section class="scene" id="s4"><div id="s4anchor" style="display:flex;flex-direction:column;align-items:center">
+    <div class="kh" style="font-size:42px"><span class="word">Built</span> <span class="word">for</span> <span class="word">where</span> <span class="word">phishing</span> <span class="word">happens.</span></div>
+    <div class="chips" id="chips"></div>
+    <div class="counter"><span id="count">0</span><span class="u">brands</span></div>
+  </div></section>
+
+  <!-- SCENE 5 — close, real ASP logo -->
+  <section class="scene" id="s5"><div id="s5anchor" style="display:flex;flex-direction:column;align-items:center">
+    <img class="logo-img" src="vigilia-logo.webp" alt="Vigilia" />
+    <div class="name">VIGILIA</div>
+    <div class="live">LIVE ON OKX.AI</div>
+    <div class="sub mono">Paste a link, an email, or a screenshot — before you click, pay, or reply.</div>
+  </div></section>
+
+</div>
+<button id="replay">▶ REPLAY</button>
+<div id="hint">Fullscreen (F) · screen-record this window</div>
+
+<script>
+const stage=document.getElementById('stage');
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);stage.style.transform=`translate(-50%,-50%) scale(${s})`;}
+addEventListener('resize',fit);fit();
+
+const BRANDS=["PayPal","Google","Apple","Microsoft","Binance","OKX","Coinbase","MetaMask",
+  "GTBank","Kuda","OPay","Moniepoint","Flutterwave","Paystack","MTN","Access Bank","Zenith","UBA"];
+let timers=[];
+const at=(ms,fn)=>timers.push(setTimeout(fn,ms));
+const show=id=>document.getElementById(id).classList.add('on');
+const hide=id=>document.getElementById(id).classList.remove('on');
+
+function reset(){
+  timers.forEach(clearTimeout);timers=[];
+  ['s0','s1','s2','s3','s4','s5'].forEach(hide);
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
+  ['c1','c2','c3','c4'].forEach(i=>document.getElementById(i).classList.remove('lit'));
+  ['a1','a2','a3'].forEach(i=>document.getElementById(i).classList.remove('show'));
+  document.getElementById('gear').classList.remove('spin');
+  document.getElementById('v2').classList.remove('slam');
+  document.getElementById('needle').classList.remove('low');
+  const conf=document.getElementById('conf');conf.textContent='CONFIDENCE: HIGH';conf.style.color='#101010';
+  document.getElementById('unk').classList.remove('show');
+  document.getElementById('chips').innerHTML='';document.getElementById('count').textContent='0';
+}
+
+function run(){
+  reset();
+  // HOOK (0–9s): line + 5-card montage (screenshots + lookalikes), ~1.35s each
+  show('s0');
+  const cards=[...document.querySelectorAll('.card')];
+  // one card visible at a time — hard cut, no overlap
+  const start=1500, dwell=1250, gap=90;
+  cards.forEach((c,i)=>{
+    const t=start+i*(dwell+gap);
+    at(t,()=>{cards.forEach(x=>x.classList.remove('active'));c.classList.add('active');});
+    at(t+dwell,()=>c.classList.remove('active'));
+  });
+  // SCENE 1 reveal (9–13.2s)
+  at(9000,()=>{hide('s0');show('s1');});
+  // SCENE 2 pipeline (13.2–22s)
+  at(13200,()=>{hide('s1');show('s2');
+    at(500,()=>document.getElementById('a1').classList.add('show'));
+    ['c1','c2','c3','c4'].forEach((c,i)=>at(800+i*450,()=>document.getElementById(c).classList.add('lit')));
+    at(2800,()=>{document.getElementById('a2').classList.add('show');document.getElementById('gear').classList.add('spin');});
+    at(3500,()=>document.getElementById('a3').classList.add('show'));
+    at(3900,()=>document.getElementById('v2').classList.add('slam'));
+  });
+  // SCENE 3 confidence (22–29.5s)
+  at(22000,()=>{hide('s2');show('s3');
+    at(2400,()=>{document.getElementById('needle').classList.add('low');
+      const conf=document.getElementById('conf');conf.textContent='CONFIDENCE: LOW';conf.style.color='#b07400';
+      document.getElementById('unk').classList.add('show');});
+  });
+  // SCENE 4 brands (29.5–37s)
+  at(29500,()=>{hide('s3');show('s4');
+    const box=document.getElementById('chips');
+    BRANDS.forEach((b,i)=>at(500+i*140,()=>{const el=document.createElement('div');el.className='chip in';el.textContent=b;box.appendChild(el);}));
+    at(700,()=>{const cEl=document.getElementById('count');let n=0;const iv=setInterval(()=>{n+=3;if(n>=106){n=106;clearInterval(iv);}cEl.textContent=n;},55);timers.push(iv);});
+  });
+  // SCENE 5 close (37–43.5s)
+  at(37000,()=>{hide('s4');show('s5');});
+  at(43500,run);
+}
+document.getElementById('replay').onclick=run;
+addEventListener('keydown',e=>{if(e.key==='f'||e.key==='F'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}});
+run();
+</script>
+</body>
+</html>
