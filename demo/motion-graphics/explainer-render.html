@@ -135,6 +135,7 @@ html,body{width:100%;height:100%;background:#0a0a0a;overflow:hidden;font-family:
 #gate.hidden{display:none}
 @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms!important}}
 </style>
+<style>#replay,#hint,#gate{display:none!important}</style>
 </head>
 <body>
 <div id="stage">
@@ -304,7 +305,7 @@ const gate=document.getElementById('gate');
 gate.addEventListener('click',()=>{sound=true;gate.classList.add('hidden');run();});
 document.getElementById('replay').onclick=()=>run();
 addEventListener('keydown',e=>{if(e.key==='f'||e.key==='F'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}});
-// waits for the start-gate click (needed for audio) — does not auto-run
+var g=document.getElementById("gate");if(g)g.style.display="none";run();
 </script>
 </body>
 </html>
