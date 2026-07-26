@@ -171,39 +171,45 @@ http://malware.testing.google.test/testing/malware/
 
 ---
 
-## X post copy
+## X post copy — submission thread (story-led)
 
-**The first line is the whole pitch — it has to work alone in a timeline.**
+**The first line is the whole pitch — a real, recognizable hack — and it has to
+work alone in a timeline.**
 
-> That "bank" text isn't from your bank. The web address has a digit where a
-> letter should be: paypa1[.]com, not paypal.
+### Tweet 1 (hook + product)
+> In 2017 someone registered аpple[.]com — with a Cyrillic "а". Browsers showed
+> it as apple.com. Nobody could tell.
 >
-> I built Vigilia to catch that in 5 seconds and show you the receipts.
+> That one invisible character is still how phishing works today.
 >
-> Send it a link, an email, or just a screenshot. It reads the image, pulls the
-> address out, and runs real security checks — Google Safe Browsing, how old the
-> domain is, whether it imitates a real brand, whether the sender is forged.
+> Vigilia catches it in 5 seconds. Send a link, an email, or just a screenshot —
+> get a verdict with the receipts. 🧵
 >
-> The AI never decides. Deterministic rules pick the verdict in code; if the
-> model disagrees, the code overrules it. And when a check can't complete, it
-> says "unknown" and lowers its confidence instead of guessing.
->
-> It knows 106 brands, weighted to where people actually get phished — GTBank,
-> Kuda, OPay, Moniepoint, Flutterwave, Paystack, MTN — not just US logos.
->
-> It's a real paid endpoint, not a demo page: agents discover it and pay 0.2
-> USDT per check over x402 on X Layer. No account. Nothing stored.
->
-> Built for #OKXAI
+> *(attach the ≤90s demo video here)*
 
-*(Attach the ≤90s demo video. Defang scam domains as `paypa1[.]com` so X
-doesn't linkify them.)*
+### Tweet 2 (why it's trustworthy)
+> The AI never decides. It runs real security checks — Safe Browsing, domain age,
+> brand impersonation, sender auth — and hard rules pick the verdict in code. When
+> it can't verify something, it says so instead of guessing.
+>
+> 106 brands, weighted to where people actually get phished — GTBank, Kuda, OPay,
+> Paystack, MTN — not just US logos.
 
-**Before posting, check two things:**
-1. **"Built for #OKXAI"** → change to **"Live on OKX.AI"** only once the listing
-   is approved. Until then the current wording is the true one.
-2. If you need it shorter, cut the 106-brands paragraph — **never** the opening
-   two lines. Those are the idea; everything else is supporting evidence.
+### Tweet 3 (the agent proof)
+> It's not a demo page. It's a live agent on OKX.AI (#7072): any agent can find it
+> and pay 0.2 USDT a check over x402 on X Layer. No account. Nothing stored.
+>
+> Live on OKX.AI · #OKXAI
+
+### One-tweet version (if you'd rather post a single tweet)
+> аpple[.]com looked identical to apple.com — the "a" was Cyrillic. That one
+> invisible character is how phishing still works.
+>
+> Vigilia catches it in 5s: send a link, email, or screenshot, get a verdict with
+> receipts. Live on OKX.AI as a paid x402 agent. #OKXAI
+
+*(Defang lookalike domains as `аpple[.]com` / `paypa1[.]com` so X doesn't linkify
+them. #7072 is approved, so "Live on OKX.AI" is now the true wording.)*
 
 ---
 

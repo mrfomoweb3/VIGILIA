@@ -1,16 +1,106 @@
 # VIGILIA
 
-Pay-per-check scam detection ASP. Submit a link, raw email text, or a screenshot;
-get a verdict (**SAFE** / **SUSPICIOUS** / **CONFIRMED_SCAM**) with plain-language evidence.
+**Scam & phishing detection you can pay for by the check.** Send a link, raw email
+text, or just a screenshot — get a verdict (**SAFE** / **SUSPICIOUS** /
+**CONFIRMED_SCAM**) with a confidence level and plain-language evidence you can act on.
 
-**Core principle:** the LLM never judges raw evidence. Deterministic tools
-(Safe Browsing, WHOIS domain age, typosquat distance, SPF/DKIM/DMARC) produce
-structured signals; the LLM's only bounded job is to synthesize verified signals
-into a verdict + explanation. Deterministic hard rules always override the model.
+> **Live on OKX.AI** as agent **[#7072](https://www.okx.ai/agents/7072)** ·
+> Try it: **https://vigilia-production-f7de.up.railway.app**
 
-Pipeline: **Observe → Extract → Verify (deterministic) → Reason (LLM, bounded) → Act**
+---
 
-## Run
+## The problem
+
+In 2017 a researcher registered `аpple.com` — with a Cyrillic `а` — and browsers
+rendered it as `apple.com`. Nobody could see the difference. That trick still drains
+bank accounts today: `rn` looks like `m` (`rnicrosoft.com`), a `1` stands in for an
+`l` (`paypa1.com`), an extra word makes it feel official (`gtbank-secure.com`). The
+tell is always there — it's just too small to notice in the moment.
+
+Vigilia is the second opinion you consult **before you click, pay, or reply.**
+
+## Why you can trust the verdict
+
+The AI never decides. Deterministic security checks produce structured signals, and
+**hard-coded rules pick the verdict in code** — if the model disagrees with the rules,
+the code wins. When a check can't complete (e.g. WHOIS is unavailable), the system
+says `unknown` and **lowers its confidence instead of guessing**. The LLM's only job
+is to write the explanation.
+
+**Pipeline:** `Observe → Extract → Verify (deterministic) → Reason (LLM, bounded) → Act`
+
+The deterministic checks:
+
+| Check | What it proves |
+|-------|----------------|
+| **Google Safe Browsing** | Is the URL on a known malware/phishing blocklist? |
+| **Domain age (WHOIS)** | Was the domain registered days ago? (a classic scam tell) |
+| **Typosquat / brand impersonation** | Homoglyph-normalized edit distance against 106 brands — catches `rn→m`, `1→l`, `0→o`, and lookalike/containment tricks |
+| **Sender auth (SPF / DKIM / DMARC)** | When email headers are present, is the sender forged? |
+
+Brand list is weighted to **where people actually get phished** — global names *plus*
+Nigerian/African banks & fintech (GTBank, Kuda, OPay, Moniepoint, Flutterwave,
+Paystack, MTN). That's a different product, not a different logo.
+
+## Inputs
+
+Exactly one of:
+- a **link** (URL),
+- raw **email text** (headers included when you have them), or
+- a **screenshot** (png/jpg/gif/webp, ≤5 MB) — OCR reads the address out of the image,
+  so a victim doesn't even need to type anything.
+
+Nothing you submit is stored beyond the request.
+
+---
+
+## How it's sold: a live agent (A2MCP + x402)
+
+Vigilia is an **Agentic Service Provider (A2MCP)** on OKX.AI — an API any agent can
+discover and pay per call. Payment is the **x402** protocol on **X Layer** (chainIndex
+196): an unpaid request gets an HTTP `402` challenge; a request carrying a valid
+payment proof gets the verdict.
+
+- **Price:** 0.2 USDT (`USD₮0`) per check
+- **Network:** X Layer (`eip155:196`)
+- **Verify it:**
+  ```bash
+  onchainos payment quote https://vigilia-production-f7de.up.railway.app/api/check
+  # → Will pay 0.2 USD₮0 (exact, X Layer)
+  ```
+
+### Two routes, one engine
+
+| Route | Access | Used by |
+|-------|--------|---------|
+| `POST /api/check` | **x402 payment-gated** — GET/unpaid POST returns a 402 challenge; paid POST returns the verdict | agents on OKX.AI |
+| `POST /api/demo` | **free**, rate-limited | the website's RUN CHECK button, so anyone can try it live |
+
+Both call the identical pipeline, so an agent's paid verdict is byte-for-byte what the
+web demo returns.
+
+## API reference
+
+- `GET  /api/health` → `{ status, version, remainingUsd }`
+- `GET  /api/config` → `{ pricePerCheckUsdt, paymentsEnabled }`
+- `POST /api/check` → x402-gated. JSON `{ url }` / `{ emailText }`, or multipart
+  `screenshot`. Unpaid → `402` + `PAYMENT-REQUIRED` challenge.
+- `POST /api/demo`  → free. Same body shapes. Returns:
+  ```json
+  {
+    "verdict": "SUSPICIOUS",
+    "confidence": "high",
+    "evidence": [{ "signal": "typosquat", "result": "flagged", "detail": "…" }],
+    "explanation": "…",
+    "recommendation": "…",
+    "checkId": "…",
+    "timestamp": "…"
+  }
+  ```
+
+---
+
+## Run locally
 
 ```bash
 npm install
@@ -21,59 +111,54 @@ npm run dev               # or: npm run build && npm start
 Open http://localhost:3000. Works without keys too — checks that can't run report
 `error`/`unknown` honestly (never a false `clean`) and the verdict degrades safely.
 
-## API
-
-- `GET  /api/health` → `{ status, version }`
-- `GET  /api/config` → `{ pricePerCheckUsdt, paymentsEnabled }`
-- `POST /api/check` → JSON `{ url }` or `{ emailText }`, or multipart `screenshot`
-  file (png/jpg/gif/webp, ≤5 MB). Returns `{ verdict, confidence, evidence[],
-  explanation, recommendation, checkId, timestamp }`.
+Guardrails are built in for a small budget: the model is pinned to
+`claude-haiku-4-5`, with a daily USD spend cap, a daily call cap, and a per-IP
+hourly rate limit (see `src/config.ts`).
 
 ## Test
 
 ```bash
 npm run typecheck
-npm test          # 18 fixture-based tests incl. the hard-rule override path
+npm test          # 29 fixture-based tests incl. the hard-rule override and homoglyph paths
 ```
 
 ## Architecture
 
 | File | Role |
 |------|------|
+| `src/config.ts` | Model pin, x402 config, budget/rate-limit guardrails |
 | `src/pipeline/types.ts` | Signal / CheckResult / Verdict interfaces |
 | `src/pipeline/extract.ts` | Stage 2 — URL / email-text / vision → structured input |
 | `src/vision.ts` | Screenshot OCR (Claude vision, JSON-only, untrusted output) |
 | `src/pipeline/verify/*` | Stage 3 — safeBrowsing, domainAge, typosquat, headerAuth |
-| `src/brands.ts` | ~110 brand domains (global + Nigerian/African banks & fintech) |
+| `src/pipeline/verify/typosquat.ts` | Homoglyph normalization + edit-distance/containment |
+| `src/brands.ts` | 106 brand domains (global + Nigerian/African banks & fintech) |
 | `src/pipeline/reason.ts` | Stage 4 — bounded LLM + hard-rule post-validation |
 | `src/pipeline/index.ts` | Orchestrator (`Promise.allSettled` verify stage) |
-| `src/server.ts` | Express routes, payment middleware, static serving |
-| `public/*` | Brutalist single-page landing + check widget |
+| `src/x402/*` | x402 seller: 402 challenge, proof verification, settlement |
+| `src/budget.ts`, `src/ratelimit.ts` | Daily spend cap + per-IP fixed-window limit |
+| `src/server.ts` | Express routes, x402 middleware, static serving |
+| `public/*` | Single-page landing + check widget |
+| `demo/` | 90s video script, X copy, motion-graphics explainer + narration |
 
 ## Deploy
 
-Any Docker host (Railway / Fly.io / Render / Cloud Run). The image builds TypeScript and
-serves both the API and the landing page.
+Any Docker host (Railway / Fly.io / Render / Cloud Run) — being **online** just means the
+endpoint responds; no daemon and no always-on laptop.
 
 ```bash
 docker build -t vigilia .
 docker run -p 3000:3000 --env-file .env vigilia
 ```
 
-Required env vars on the host: `ANTHROPIC_API_KEY`, `GOOGLE_SAFE_BROWSING_API_KEY`.
-Optional: `PORT` (hosts usually inject it), `PRICE_PER_CHECK_USDT`, `PAYMENTS_ENABLED`.
-Health check path for the platform: `/api/health`.
+Required env: `ANTHROPIC_API_KEY`, `GOOGLE_SAFE_BROWSING_API_KEY`. Optional: `PORT`
+(hosts usually inject it), `PRICE_PER_CHECK_USDT`, `X402_PAYTO_ADDRESS` / `WALLET_ADDRESS`.
+Health check path: `/api/health`.
 
-> **Use a custom domain for the public endpoint.** The ASP listing stores the endpoint URL
-> permanently on-chain, so registering a host-generated URL (`*.up.railway.app`,
-> `*.onrender.com`) locks the listing to that host. Point a domain you control at the host
-> instead — then you can migrate later without touching the listing.
+> **Prefer a custom domain for the public endpoint.** The ASP listing stores the endpoint
+> URL permanently on-chain, so a host-generated URL (`*.up.railway.app`) locks the listing
+> to that host. Point a domain you control at the host to stay portable.
 
-## Payment gating (ASP layer)
+---
 
-`PAYMENTS_ENABLED=false` by default. When true, `/api/check` requires an
-`X-Payment-Proof` header (returns 402 otherwise). The OKX.AI marketplace fronts
-the actual payment — wire their current ASP billing spec at listing time
-(placeholder middleware in `src/server.ts`).
-
-Built for the OKX.AI Genesis Hackathon.
+Built for the **OKX.AI Genesis Hackathon**. An ASP by Diacreate.
