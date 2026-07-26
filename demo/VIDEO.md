@@ -128,3 +128,27 @@ speak the voiceover — those stay with you (same as Aval).
 2. Pick a **hook line** (A / B / C above).
 3. **Go-ahead to build the HTML motion-graphics explainer** (Section 3) — or say
    you'd rather generate it with Higgsfield and I'll spec prompts instead.
+
+---
+
+## Voiceover (generated — macOS "Samantha")
+
+Files in `demo/motion-graphics/voiceover/`:
+- `s0.mp3 … s5.mp3` — one narration line per scene.
+- `narration-full.mp3` — **all lines on one 46s track, pre-aligned to the
+  animation timeline** (t=0 matches the animation's t=0).
+
+**To record the explainer WITH narration — two ways:**
+
+1. **Easiest / most reliable (editor):** in the browser, click ▶, screen-record
+   the *video only* (QuickTime ⌘⇧5). Then in your editor drop
+   `voiceover/narration-full.mp3` at **0:00** under the clip — it lines up with
+   every scene automatically. This avoids macOS's system-audio limitation.
+2. **One-shot with sound:** the HTML plays the narration when you click ▶, but
+   QuickTime records the *mic*, not browser audio. To capture the audio live you
+   need a system-audio route — OBS with "Desktop Audio", or BlackHole/Loopback.
+   If you're not set up for that, use method 1.
+
+Re-voice any line: `say -v Samantha -r 180 -o s2.aiff "new text"` then
+`ffmpeg -y -i s2.aiff -q:a 4 s2.mp3`. Tell me and I'll regenerate + realign the
+combined track.

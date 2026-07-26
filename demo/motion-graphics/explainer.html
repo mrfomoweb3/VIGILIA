@@ -127,6 +127,12 @@ html,body{width:100%;height:100%;background:#0a0a0a;overflow:hidden;font-family:
 #replay{position:absolute;bottom:16px;right:16px;z-index:50;font-family:"IBM Plex Mono",monospace;
   font-size:12px;border:2px solid #555;background:#111;color:#ccc;padding:6px 12px;cursor:pointer}
 #hint{position:absolute;bottom:16px;left:16px;z-index:50;font-family:"IBM Plex Mono",monospace;font-size:12px;color:#666}
+#gate{position:absolute;inset:0;z-index:60;background:rgba(10,10,10,.96);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:22px;cursor:pointer;color:#f6f3ea}
+#gate .play{width:110px;height:110px;border:4px solid var(--lime);border-radius:50%;display:flex;
+  align-items:center;justify-content:center;font-size:44px;color:var(--lime);padding-left:8px}
+#gate .t{font-family:"IBM Plex Mono",monospace;font-size:15px;letter-spacing:.04em;color:#bbb}
+#gate.hidden{display:none}
 @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms!important}}
 </style>
 </head>
@@ -211,7 +217,18 @@ html,body{width:100%;height:100%;background:#0a0a0a;overflow:hidden;font-family:
     <div class="sub mono">Paste a link, an email, or a screenshot — before you click, pay, or reply.</div>
   </div></section>
 
+  <!-- start gate (browsers block audio autoplay until a click) -->
+  <div id="gate"><div class="play">▶</div><div class="t">CLICK TO PLAY WITH SOUND · then screen-record</div></div>
 </div>
+
+<!-- per-scene narration (macOS 'say' — Samantha) -->
+<audio id="au-s0" src="voiceover/s0.mp3" preload="auto"></audio>
+<audio id="au-s1" src="voiceover/s1.mp3" preload="auto"></audio>
+<audio id="au-s2" src="voiceover/s2.mp3" preload="auto"></audio>
+<audio id="au-s3" src="voiceover/s3.mp3" preload="auto"></audio>
+<audio id="au-s4" src="voiceover/s4.mp3" preload="auto"></audio>
+<audio id="au-s5" src="voiceover/s5.mp3" preload="auto"></audio>
+
 <button id="replay">▶ REPLAY</button>
 <div id="hint">Fullscreen (F) · screen-record this window</div>
 
@@ -223,12 +240,16 @@ addEventListener('resize',fit);fit();
 const BRANDS=["PayPal","Google","Apple","Microsoft","Binance","OKX","Coinbase","MetaMask",
   "GTBank","Kuda","OPay","Moniepoint","Flutterwave","Paystack","MTN","Access Bank","Zenith","UBA"];
 let timers=[];
+let sound=false; // enabled after the user clicks the start gate
 const at=(ms,fn)=>timers.push(setTimeout(fn,ms));
 const show=id=>document.getElementById(id).classList.add('on');
 const hide=id=>document.getElementById(id).classList.remove('on');
+const AUDIO=['s0','s1','s2','s3','s4','s5'].map(i=>document.getElementById('au-'+i));
+function playVO(i){ if(!sound)return; const a=document.getElementById('au-'+i); try{a.currentTime=0;a.play();}catch(e){} }
 
 function reset(){
   timers.forEach(clearTimeout);timers=[];
+  AUDIO.forEach(a=>{try{a.pause();a.currentTime=0;}catch(e){}});
   ['s0','s1','s2','s3','s4','s5'].forEach(hide);
   document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
   ['c1','c2','c3','c4'].forEach(i=>document.getElementById(i).classList.remove('lit'));
@@ -243,45 +264,47 @@ function reset(){
 
 function run(){
   reset();
-  // HOOK (0–9s): line + 5-card montage (screenshots + lookalikes), ~1.35s each
-  show('s0');
+  // HOOK (0–9s): line + 5-card montage (screenshots + lookalikes)
+  show('s0'); playVO('s0');
   const cards=[...document.querySelectorAll('.card')];
-  // one card visible at a time — hard cut, no overlap
   const start=1500, dwell=1250, gap=90;
   cards.forEach((c,i)=>{
     const t=start+i*(dwell+gap);
     at(t,()=>{cards.forEach(x=>x.classList.remove('active'));c.classList.add('active');});
     at(t+dwell,()=>c.classList.remove('active'));
   });
-  // SCENE 1 reveal (9–13.2s)
-  at(9000,()=>{hide('s0');show('s1');});
-  // SCENE 2 pipeline (13.2–22s)
-  at(13200,()=>{hide('s1');show('s2');
+  // SCENE 1 reveal (9–14s)
+  at(9000,()=>{hide('s0');show('s1');playVO('s1');});
+  // SCENE 2 pipeline (14–23s)
+  at(14000,()=>{hide('s1');show('s2');playVO('s2');
     at(500,()=>document.getElementById('a1').classList.add('show'));
     ['c1','c2','c3','c4'].forEach((c,i)=>at(800+i*450,()=>document.getElementById(c).classList.add('lit')));
     at(2800,()=>{document.getElementById('a2').classList.add('show');document.getElementById('gear').classList.add('spin');});
     at(3500,()=>document.getElementById('a3').classList.add('show'));
     at(3900,()=>document.getElementById('v2').classList.add('slam'));
   });
-  // SCENE 3 confidence (22–29.5s)
-  at(22000,()=>{hide('s2');show('s3');
-    at(2400,()=>{document.getElementById('needle').classList.add('low');
+  // SCENE 3 confidence (23–30s)
+  at(23000,()=>{hide('s2');show('s3');playVO('s3');
+    at(2200,()=>{document.getElementById('needle').classList.add('low');
       const conf=document.getElementById('conf');conf.textContent='CONFIDENCE: LOW';conf.style.color='#b07400';
       document.getElementById('unk').classList.add('show');});
   });
-  // SCENE 4 brands (29.5–37s)
-  at(29500,()=>{hide('s3');show('s4');
+  // SCENE 4 brands (30–37.5s)
+  at(30000,()=>{hide('s3');show('s4');playVO('s4');
     const box=document.getElementById('chips');
     BRANDS.forEach((b,i)=>at(500+i*140,()=>{const el=document.createElement('div');el.className='chip in';el.textContent=b;box.appendChild(el);}));
     at(700,()=>{const cEl=document.getElementById('count');let n=0;const iv=setInterval(()=>{n+=3;if(n>=106){n=106;clearInterval(iv);}cEl.textContent=n;},55);timers.push(iv);});
   });
-  // SCENE 5 close (37–43.5s)
-  at(37000,()=>{hide('s4');show('s5');});
-  at(43500,run);
+  // SCENE 5 close (37.5–46s)
+  at(37500,()=>{hide('s4');show('s5');playVO('s5');});
+  at(46000,run);
 }
-document.getElementById('replay').onclick=run;
+// Start gate — first click enables sound and begins; loops keep sound on.
+const gate=document.getElementById('gate');
+gate.addEventListener('click',()=>{sound=true;gate.classList.add('hidden');run();});
+document.getElementById('replay').onclick=()=>run();
 addEventListener('keydown',e=>{if(e.key==='f'||e.key==='F'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}});
-run();
+// waits for the start-gate click (needed for audio) — does not auto-run
 </script>
 </body>
 </html>
