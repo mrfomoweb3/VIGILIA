@@ -274,9 +274,9 @@ function run(){
     at(t+dwell,()=>c.classList.remove('active'));
   });
   // SCENE 1 reveal (9–14s)
-  at(9000,()=>{hide('s0');show('s1');playVO('s1');});
+  at(9500,()=>{hide('s0');show('s1');playVO('s1');});
   // SCENE 2 pipeline (14–23s)
-  at(14000,()=>{hide('s1');show('s2');playVO('s2');
+  at(15000,()=>{hide('s1');show('s2');playVO('s2');
     at(500,()=>document.getElementById('a1').classList.add('show'));
     ['c1','c2','c3','c4'].forEach((c,i)=>at(800+i*450,()=>document.getElementById(c).classList.add('lit')));
     at(2800,()=>{document.getElementById('a2').classList.add('show');document.getElementById('gear').classList.add('spin');});
@@ -284,20 +284,20 @@ function run(){
     at(3900,()=>document.getElementById('v2').classList.add('slam'));
   });
   // SCENE 3 confidence (23–30s)
-  at(23000,()=>{hide('s2');show('s3');playVO('s3');
+  at(24500,()=>{hide('s2');show('s3');playVO('s3');
     at(2200,()=>{document.getElementById('needle').classList.add('low');
       const conf=document.getElementById('conf');conf.textContent='CONFIDENCE: LOW';conf.style.color='#b07400';
       document.getElementById('unk').classList.add('show');});
   });
   // SCENE 4 brands (30–37.5s)
-  at(30000,()=>{hide('s3');show('s4');playVO('s4');
+  at(31500,()=>{hide('s3');show('s4');playVO('s4');
     const box=document.getElementById('chips');
     BRANDS.forEach((b,i)=>at(500+i*140,()=>{const el=document.createElement('div');el.className='chip in';el.textContent=b;box.appendChild(el);}));
     at(700,()=>{const cEl=document.getElementById('count');let n=0;const iv=setInterval(()=>{n+=3;if(n>=106){n=106;clearInterval(iv);}cEl.textContent=n;},55);timers.push(iv);});
   });
   // SCENE 5 close (37.5–46s)
-  at(37500,()=>{hide('s4');show('s5');playVO('s5');});
-  at(46000,run);
+  at(39000,()=>{hide('s4');show('s5');playVO('s5');});
+  at(47500,run);
 }
 // Start gate — first click enables sound and begins; loops keep sound on.
 const gate=document.getElementById('gate');
