@@ -15,8 +15,11 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
+    "@okxweb3/x402-core": "^0.1.0",
+    "@okxweb3/x402-evm": "^0.2.1",
+    "@okxweb3/x402-express": "^0.1.1",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2",
+    "express": "^4.22.2",
     "fastest-levenshtein": "^1.0.16",
     "mailauth": "^4.8.4",
     "multer": "^1.4.5-lts.1",

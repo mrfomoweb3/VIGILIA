@@ -10,15 +10,12 @@ import { AnthropicLLMClient } from "./pipeline/reason.js";
 import { checkRateLimit } from "./ratelimit.js";
 import { snapshot } from "./budget.js";
 import { MODEL, guardrails, x402 } from "./config.js";
-import {
-  PAYMENT_REQUIRED_HEADER,
-  PAYMENT_RESPONSE_HEADER,
-  buildPaymentRequired,
-  buildPaymentResponse,
-  paymentRequiredBody,
-  readPaymentHeader,
-  verifyPaymentAuthorization,
-} from "./x402/x402.js";
+// Official OKX Payment seller SDK — builds the 402 challenge, verifies the
+// buyer's proof, and settles through the OKX facilitator (Broker).
+import { paymentMiddleware, x402ResourceServer } from "@okxweb3/x402-express";
+import { ExactEvmScheme } from "@okxweb3/x402-evm/exact/server";
+import { OKXFacilitatorClient } from "@okxweb3/x402-core";
+import type { Network } from "@okxweb3/x402-core/types";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(__dirname, "..", "public");
@@ -47,28 +44,52 @@ const upload = multer({
 // Shared LLM client (reused across requests).
 const llm = new AnthropicLLMClient();
 
-// ---- x402 payment gating (A2MCP marketplace endpoint) -----------------------
-// /api/check is the endpoint registered on-chain as an A2MCP service. Per the
-// x402 protocol it must NEVER 404: any unpaid call (including a GET from a
-// browser, an OKX review probe, or x402 discovery) gets a conformant 402
-// carrying the PAYMENT-REQUIRED challenge. A call with a valid payment proof
-// runs the check and returns 200 + PAYMENT-RESPONSE.
+// ---- x402 payment gating via the official OKX seller SDK ---------------------
+// /api/check is the endpoint registered on-chain as an A2MCP service. The OKX
+// paymentMiddleware turns any unpaid call into a conformant HTTP 402 carrying
+// the PAYMENT-REQUIRED header (so it never 404s), verifies a buyer's payment
+// proof, and settles through the OKX facilitator before the handler runs.
+const facilitator = new OKXFacilitatorClient({
+  apiKey: x402.okx.apiKey,
+  secretKey: x402.okx.secretKey,
+  passphrase: x402.okx.passphrase,
+});
+const resourceServer = new x402ResourceServer(facilitator).register(
+  x402.network as Network,
+  new ExactEvmScheme(),
+);
 
-/** Absolute URL of this resource, as advertised in the challenge. */
-function resourceUrl(req: Request): string {
-  const base =
-    process.env.PUBLIC_BASE_URL?.replace(/\/$/, "") ??
-    `${req.protocol}://${req.get("host")}`;
-  return `${base}/api/check`;
-}
-
-/** Send the 402 challenge (header + human-readable body). */
-function sendPaymentRequired(req: Request, res: Response) {
-  res.setHeader(PAYMENT_REQUIRED_HEADER, buildPaymentRequired(resourceUrl(req)));
-  return res.status(402).json(paymentRequiredBody());
-}
+// Gate both methods so an OKX review probe never 404s regardless of the verb it
+// uses; both resolve to the same paid check below.
+const checkAccepts = [
+  {
+    scheme: "exact",
+    network: x402.network as Network,
+    payTo: x402.payTo,
+    price: x402.price,
+  },
+];
+const okxPaymentMiddleware = paymentMiddleware(
+  {
+    "GET /api/check": {
+      accepts: checkAccepts,
+      description: "Scam / phishing check — verdict with evidence",
+      mimeType: "application/json",
+    },
+    "POST /api/check": {
+      accepts: checkAccepts,
+      description: "Scam / phishing check — verdict with evidence",
+      mimeType: "application/json",
+    },
+  },
+  resourceServer,
+);
 
 // ---- Routes -----------------------------------------------------------------
+
+// The OKX payment gate runs first for /api/check; unmatched routes (/, /api/demo,
+// /api/health, static) pass straight through.
+app.use(okxPaymentMiddleware);
 
 app.get("/api/health", (_req, res) => {
   const spend = snapshot();
@@ -138,32 +159,10 @@ async function handleCheck(req: Request, res: Response) {
 }
 
 // ---- /api/check — the A2MCP endpoint registered on-chain (x402-gated) --------
-
-// Discovery/probe. An A2MCP resource must never 404: a GET returns the same
-// conformant 402 challenge that OKX's review probe and x402 discovery expect.
-app.get("/api/check", (req, res) => sendPaymentRequired(req, res));
-
-app.post(
-  "/api/check",
-  rateLimit,
-  upload.single("screenshot"),
-  async (req: Request, res: Response) => {
-    const proof = readPaymentHeader((n) => req.header(n));
-    if (!proof) return sendPaymentRequired(req, res);
-
-    const payment = await verifyPaymentAuthorization(proof, resourceUrl(req));
-    if (!payment) {
-      res.setHeader(PAYMENT_REQUIRED_HEADER, buildPaymentRequired(resourceUrl(req)));
-      return res.status(402).json({
-        error: "payment_invalid",
-        message: "Payment could not be verified. Retry with a fresh payment.",
-      });
-    }
-
-    res.setHeader(PAYMENT_RESPONSE_HEADER, buildPaymentResponse(payment));
-    return handleCheck(req, res);
-  },
-);
+// Payment is already verified + settled by okxPaymentMiddleware above; if control
+// reaches these handlers, the call is paid. They just run the check.
+app.get("/api/check", rateLimit, handleCheck);
+app.post("/api/check", rateLimit, upload.single("screenshot"), handleCheck);
 
 // ---- /api/demo — free public demo powering the landing page ------------------
 // Same engine, no payment. Protected by the per-IP rate limit and the daily
@@ -196,18 +195,24 @@ app.get("/api/config", (_req, res) => {
   res.json({
     pricePerCheckUsdt: PRICE_PER_CHECK_USDT,
     paymentsEnabled: PAYMENTS_ENABLED,
-    x402: { network: x402.network, mode: x402.mode },
+    x402: { network: x402.network, asset: x402.assetName },
   });
 });
 app.use(express.static(PUBLIC_DIR));
 
 app.listen(PORT, () => {
   console.log(
-    `Vigilia v${VERSION} on :${PORT} — /api/check x402-gated ` +
-      `(${x402.mode}, ${x402.priceUsd} ${x402.assetName}, ${x402.network}, payTo ${
+    `Vigilia v${VERSION} on :${PORT} — /api/check x402-gated via OKX SDK ` +
+      `(${x402.price} ${x402.assetName}, ${x402.network}, payTo ${
         x402.payTo || "UNSET"
       }); /api/demo free`,
   );
+  if (!x402.configured) {
+    console.warn(
+      "⚠  OKX facilitator not fully configured — set OKX_API_KEY / OKX_SECRET_KEY / " +
+        "OKX_PASSPHRASE and a payTo (X402_PAYTO_ADDRESS or WALLET_ADDRESS) to verify + settle payments.",
+    );
+  }
 });
 
 export { app };

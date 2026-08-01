@@ -58,50 +58,51 @@ function str(name: string, fallback = ""): string {
 
 /**
  * x402 seller-side config for the A2MCP marketplace endpoint (/api/check).
- * Values mirror the OKX marketplace's XLayer setup: USD₮0, eip155:196, 6 decimals.
- * Defaults are the canonical on-chain values so the endpoint is conformant even
- * before any env is set; override per-deploy as needed.
+ *
+ * Vigilia uses the OFFICIAL OKX Payment seller SDK (@okxweb3/x402-*). The SDK
+ * builds the PAYMENT-REQUIRED challenge, verifies the buyer's proof, and settles
+ * through the OKX facilitator (Broker) — so we no longer hand-roll any of that.
+ * We only supply the business terms (price / network / payTo) and the OKX
+ * Developer-Portal credentials the facilitator authenticates with.
  */
 export const x402 = {
-  /** Price advertised in the 402 challenge (human USD/USDT). */
+  /** Price per check, in USD. The SDK auto-converts to the network's stablecoin. */
   get priceUsd(): number {
     return num("PRICE_PER_CHECK_USDT", 0.2);
   },
-  /** CAIP-2 network — XLayer mainnet. */
+  /** USD price string the OKX SDK expects, e.g. "$0.2". */
+  get price(): string {
+    return `$${this.priceUsd}`;
+  },
+  /** CAIP-2 network — XLayer mainnet (eip155:196); testnet is eip155:1952. */
   get network(): string {
     return str("X402_NETWORK", "eip155:196");
   },
-  /** Canonical XLayer USD₮0 contract (same token the marketplace uses). */
-  get assetUsdt(): string {
-    return str("X402_ASSET_USDT", "0x779ded0c9e1022225f8e0630b35a9b54be713736");
-  },
-  get assetDecimals(): number {
-    return num("X402_ASSET_DECIMALS", 6);
-  },
-  /** EIP-712 domain the buyer needs to sign the EIP-3009 authorization. */
+  /** Display label for the settlement stablecoin (logs / UI only). */
   get assetName(): string {
     return str("X402_ASSET_NAME", "USD₮0");
-  },
-  get assetVersion(): string {
-    return str("X402_ASSET_VERSION", "1");
   },
   /** Wallet that receives payment — the agent's owner address. */
   get payTo(): string {
     return str("X402_PAYTO_ADDRESS", str("WALLET_ADDRESS"));
   },
-  /**
-   * "sandbox" — return a conformant 402 and admit any well-formed payment proof
-   * without on-chain settlement (dev/demo; matches the approved reference agent).
-   * "production" — verify + settle via the facilitator, fail-closed.
-   */
-  get mode(): string {
-    return str("X402_MODE", "sandbox");
+  /** OKX facilitator (Broker) credentials — apply at the OKX Developer Portal. */
+  okx: {
+    get apiKey(): string {
+      return str("OKX_API_KEY");
+    },
+    get secretKey(): string {
+      return str("OKX_SECRET_KEY");
+    },
+    get passphrase(): string {
+      return str("OKX_PASSPHRASE");
+    },
   },
-  get facilitatorUrl(): string {
-    return str("X402_FACILITATOR_URL");
-  },
-  get facilitatorApiKey(): string {
-    return str("X402_FACILITATOR_API_KEY");
+  /** True once the SDK has everything it needs to verify + settle payments. */
+  get configured(): boolean {
+    return Boolean(
+      this.okx.apiKey && this.okx.secretKey && this.okx.passphrase && this.payTo,
+    );
   },
 };
 

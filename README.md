@@ -58,8 +58,10 @@ Nothing you submit is stored beyond the request.
 
 Vigilia is an **Agentic Service Provider (A2MCP)** on OKX.AI — an API any agent can
 discover and pay per call. Payment is the **x402** protocol on **X Layer** (chainIndex
-196): an unpaid request gets an HTTP `402` challenge; a request carrying a valid
-payment proof gets the verdict.
+196), integrated with the **official OKX Payment seller SDK** (`@okxweb3/x402-express`
+· `@okxweb3/x402-core` · `@okxweb3/x402-evm`): the SDK's `paymentMiddleware` issues the
+HTTP `402` challenge on `/api/check`, verifies the buyer's payment proof, and settles
+through the OKX facilitator (Broker) — no hand-rolled payment code.
 
 - **Price:** 0.2 USDT (`USD₮0`) per check
 - **Network:** X Layer (`eip155:196`)
@@ -135,9 +137,8 @@ npm test          # 29 fixture-based tests incl. the hard-rule override and homo
 | `src/brands.ts` | 106 brand domains (global + Nigerian/African banks & fintech) |
 | `src/pipeline/reason.ts` | Stage 4 — bounded LLM + hard-rule post-validation |
 | `src/pipeline/index.ts` | Orchestrator (`Promise.allSettled` verify stage) |
-| `src/x402/*` | x402 seller: 402 challenge, proof verification, settlement |
 | `src/budget.ts`, `src/ratelimit.ts` | Daily spend cap + per-IP fixed-window limit |
-| `src/server.ts` | Express routes, x402 middleware, static serving |
+| `src/server.ts` | Express routes, official OKX `paymentMiddleware` gate, static serving |
 | `public/*` | Single-page landing + check widget |
 | `demo/` | 90s video script, X copy, motion-graphics explainer + narration |
 
@@ -151,9 +152,11 @@ docker build -t vigilia .
 docker run -p 3000:3000 --env-file .env vigilia
 ```
 
-Required env: `ANTHROPIC_API_KEY`, `GOOGLE_SAFE_BROWSING_API_KEY`. Optional: `PORT`
-(hosts usually inject it), `PRICE_PER_CHECK_USDT`, `X402_PAYTO_ADDRESS` / `WALLET_ADDRESS`.
-Health check path: `/api/health`.
+Required env: `ANTHROPIC_API_KEY`, `GOOGLE_SAFE_BROWSING_API_KEY`. For the paid
+`/api/check` endpoint the OKX SDK also needs `OKX_API_KEY`, `OKX_SECRET_KEY`,
+`OKX_PASSPHRASE` (OKX Developer Portal) and a `X402_PAYTO_ADDRESS` / `WALLET_ADDRESS`.
+Optional: `PORT` (hosts usually inject it), `PRICE_PER_CHECK_USDT`, `X402_NETWORK`
+(`eip155:196` mainnet / `eip155:1952` testnet). Health check path: `/api/health`.
 
 > **Prefer a custom domain for the public endpoint.** The ASP listing stores the endpoint
 > URL permanently on-chain, so a host-generated URL (`*.up.railway.app`) locks the listing
