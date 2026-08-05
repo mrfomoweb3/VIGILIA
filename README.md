@@ -155,6 +155,10 @@ docker run -p 3000:3000 --env-file .env vigilia
 Required env: `ANTHROPIC_API_KEY`, `GOOGLE_SAFE_BROWSING_API_KEY`. For the paid
 `/api/check` endpoint the OKX SDK also needs `OKX_API_KEY`, `OKX_SECRET_KEY`,
 `OKX_PASSPHRASE` (OKX Developer Portal) and a `X402_PAYTO_ADDRESS` / `WALLET_ADDRESS`.
+For accepted A2A fulfillment jobs, configure the same `VIGILIA_INTERNAL_KEY` on
+the server and on the worker running `scripts/a2a_check.mjs`. The worker uses the
+private `/api/internal/check` route, so it does not pay the public x402 endpoint a
+second time. `VIGILIA_INTERNAL_ENDPOINT` can override that route's public URL.
 Optional: `PORT` (hosts usually inject it), `PRICE_PER_CHECK_USDT`, `X402_NETWORK`
 (`eip155:196` mainnet / `eip155:1952` testnet). Health check path: `/api/health`.
 

@@ -23,6 +23,7 @@ const PUBLIC_DIR = join(__dirname, "..", "public");
 const PORT = Number(process.env.PORT ?? 3000);
 const PAYMENTS_ENABLED = process.env.PAYMENTS_ENABLED === "true";
 const PRICE_PER_CHECK_USDT = process.env.PRICE_PER_CHECK_USDT ?? "0.2";
+const INTERNAL_CHECK_KEY = process.env.VIGILIA_INTERNAL_KEY;
 const VERSION = "1.0.0";
 
 const app = express();
@@ -90,6 +91,18 @@ const okxPaymentMiddleware = paymentMiddleware(
 // The OKX payment gate runs first for /api/check; unmatched routes (/, /api/demo,
 // /api/health, static) pass straight through.
 app.use(okxPaymentMiddleware);
+
+/**
+ * Private fulfillment route for accepted A2A jobs. The job escrow has already
+ * paid for the check, so this route must not be x402-gated or it would make
+ * the worker pay Vigilia a second time.
+ */
+function requireInternalKey(req: Request, res: Response, next: NextFunction) {
+  if (!INTERNAL_CHECK_KEY || req.get("x-vigilia-internal-key") !== INTERNAL_CHECK_KEY) {
+    return res.status(404).json({ error: "Not found" });
+  }
+  return next();
+}
 
 app.get("/api/health", (_req, res) => {
   const spend = snapshot();
@@ -168,6 +181,12 @@ app.post("/api/check", rateLimit, upload.single("screenshot"), handleCheck);
 // Same engine, no payment. Protected by the per-IP rate limit and the daily
 // budget cap so a public free endpoint can't drain the API balance.
 app.post("/api/demo", rateLimit, upload.single("screenshot"), handleCheck);
+app.post(
+  "/api/internal/check",
+  requireInternalKey,
+  upload.single("screenshot"),
+  handleCheck,
+);
 
 // Multer / body errors (e.g. file too large) rendered as clean 400s.
 app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {

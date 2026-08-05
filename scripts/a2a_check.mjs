@@ -21,8 +21,9 @@ import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 
 const ENDPOINT =
-  process.env.VIGILIA_ENDPOINT ??
-  "https://vigilia-production-f7de.up.railway.app/api/check";
+  process.env.VIGILIA_INTERNAL_ENDPOINT ??
+  "https://vigilia-production-f7de.up.railway.app/api/internal/check";
+const INTERNAL_KEY = process.env.VIGILIA_INTERNAL_KEY;
 
 function parseArgs(argv) {
   const out = {};
@@ -67,6 +68,9 @@ function buildDeliveryMessage(r) {
 }
 
 async function main() {
+  if (!INTERNAL_KEY) {
+    fail("VIGILIA_INTERNAL_KEY is not configured for A2A fulfillment.");
+  }
   const args = parseArgs(process.argv.slice(2));
   const modes = ["url", "email", "screenshot"].filter((k) => args[k]);
   if (modes.length !== 1) {
@@ -90,12 +94,19 @@ async function main() {
         : "application/octet-stream";
       const form = new FormData();
       form.append("screenshot", new Blob([buf], { type }), name);
-      res = await fetch(ENDPOINT, { method: "POST", body: form });
+      res = await fetch(ENDPOINT, {
+        method: "POST",
+        headers: { "x-vigilia-internal-key": INTERNAL_KEY },
+        body: form,
+      });
     } else {
       const body = args.url ? { url: args.url } : { emailText: args.email };
       res = await fetch(ENDPOINT, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-vigilia-internal-key": INTERNAL_KEY,
+        },
         body: JSON.stringify(body),
       });
     }
