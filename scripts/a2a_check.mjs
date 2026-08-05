@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 // Vigilia A2A task fulfiller.
+
+import "dotenv/config";
 //
 // When Vigilia (ASP #7072) is delegated a scam-check task over OKX A2A, the
 // spawned session runs THIS script to do the work. It reuses the already-live
