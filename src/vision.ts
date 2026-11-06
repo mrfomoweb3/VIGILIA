@@ -1,16 +1,17 @@
 // Stage 1 (screenshot path) — VISION / OCR
-// Claude vision transcribes a screenshot into structured JSON. This is an
-// EXTRACTION engine only: it reads what's on screen, character-for-character.
-// Its output (especially links) is UNTRUSTED and flows into the same
-// deterministic verify stage — never straight to a verdict.
+// An open-weight vision-language model, served through Otari, transcribes a
+// screenshot into structured JSON. This is an EXTRACTION engine only: it reads
+// what's on screen, character-for-character. Its output (especially links) is
+// UNTRUSTED and flows into the same deterministic verify stage — never
+// straight to a verdict.
 
-import Anthropic from "@anthropic-ai/sdk";
 import {
-  MODEL,
+  models,
   MAX_TOKENS_VISION as MAX_TOKENS,
   assertModelAllowed,
 } from "./config.js";
 import { canSpend, record } from "./budget.js";
+import { otari, type OtariClient } from "./otari.js";
 import type { VisionExtraction } from "./pipeline/extract.js";
 
 const SYSTEM = "You are an OCR and extraction engine. Output ONLY valid JSON, no prose.";
@@ -50,11 +51,8 @@ function parseJsonLoose(text: string): VisionExtraction | null {
   }
 }
 
-export class AnthropicVisionClient implements VisionClient {
-  private client: Anthropic;
-  constructor(apiKey?: string) {
-    this.client = new Anthropic({ apiKey: apiKey ?? process.env.ANTHROPIC_API_KEY });
-  }
+export class OtariVisionClient implements VisionClient {
+  constructor(private readonly client: OtariClient = otari()) {}
 
   private async callOnce(
     imageBase64: string,
@@ -68,39 +66,38 @@ export class AnthropicVisionClient implements VisionClient {
       throw new VisionBudgetError(decision.reason);
     }
 
-    assertModelAllowed(MODEL);
-    const res = await this.client.messages.create({
-      model: MODEL,
+    const model = models.vision;
+    assertModelAllowed(model);
+    const res = await this.client.chat({
+      model,
       max_tokens: MAX_TOKENS,
-      system: SYSTEM,
+      temperature: 0,
       messages: [
+        { role: "system", content: SYSTEM },
         {
           role: "user",
           content: [
-            {
-              type: "image",
-              source: { type: "base64", media_type: mediaType, data: imageBase64 },
-            },
+            { type: "image_url", image_url: { url: `data:${mediaType};base64,${imageBase64}` } },
             { type: "text", text: appendRetry ? `${TASK}\n\nReturn only JSON.` : TASK },
           ],
         },
       ],
     });
 
-    const cost = record(res.usage.input_tokens, res.usage.output_tokens);
+    const cost = record(res.usage.promptTokens, res.usage.completionTokens);
     console.log(
       JSON.stringify({
         llm: "vision",
-        model: MODEL,
+        model: res.model,
         retry: appendRetry,
-        inputTokens: res.usage.input_tokens,
-        outputTokens: res.usage.output_tokens,
+        inputTokens: res.usage.promptTokens,
+        outputTokens: res.usage.completionTokens,
         costUsd: Number(cost.toFixed(6)),
+        otari: res.headers,
       }),
     );
 
-    const block = res.content.find((b) => b.type === "text");
-    return block && block.type === "text" ? block.text : "";
+    return res.text;
   }
 
   async extract(imageBase64: string, mediaType: ImageMediaType): Promise<VisionExtraction> {

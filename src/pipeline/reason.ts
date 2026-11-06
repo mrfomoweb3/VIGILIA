@@ -5,13 +5,13 @@
 // the signals plus extracted urgency cues. Deterministic rules always win: we
 // re-check them in code after the LLM answers and override any violation.
 
-import Anthropic from "@anthropic-ai/sdk";
 import {
-  MODEL,
+  models,
   MAX_TOKENS_REASON as MAX_TOKENS,
   assertModelAllowed,
 } from "../config.js";
 import { canSpend, record } from "../budget.js";
+import { otari, type OtariClient } from "../otari.js";
 import type {
   Confidence,
   ReasonOutput,
@@ -46,12 +46,10 @@ export class BudgetExhaustedError extends Error {
   }
 }
 
-/** Default client backed by the Anthropic API. */
-export class AnthropicLLMClient implements LLMClient {
-  private client: Anthropic;
-  constructor(apiKey?: string) {
-    this.client = new Anthropic({ apiKey: apiKey ?? process.env.ANTHROPIC_API_KEY });
-  }
+/** Default client: the verdict role, served by an open-weight model via Otari. */
+export class OtariLLMClient implements LLMClient {
+  constructor(private readonly client: OtariClient = otari()) {}
+
   async synthesize(userPrompt: string): Promise<string> {
     // Budget gate — refuse rather than spend past the daily cap. The caller
     // falls back to the deterministic verdict path.
@@ -60,27 +58,31 @@ export class AnthropicLLMClient implements LLMClient {
       throw new BudgetExhaustedError(decision.reason);
     }
 
-    assertModelAllowed(MODEL);
-    const res = await this.client.messages.create({
-      model: MODEL,
+    const model = models.verdict;
+    assertModelAllowed(model);
+    const res = await this.client.chat({
+      model,
       max_tokens: MAX_TOKENS,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
+      temperature: 0,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
     });
 
-    const cost = record(res.usage.input_tokens, res.usage.output_tokens);
+    const cost = record(res.usage.promptTokens, res.usage.completionTokens);
     console.log(
       JSON.stringify({
         llm: "reason",
-        model: MODEL,
-        inputTokens: res.usage.input_tokens,
-        outputTokens: res.usage.output_tokens,
+        model: res.model,
+        inputTokens: res.usage.promptTokens,
+        outputTokens: res.usage.completionTokens,
         costUsd: Number(cost.toFixed(6)),
+        otari: res.headers,
       }),
     );
 
-    const block = res.content.find((b) => b.type === "text");
-    return block && block.type === "text" ? block.text : "";
+    return res.text;
   }
 }
 

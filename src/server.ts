@@ -6,10 +6,10 @@ import multer from "multer";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { runCheck, PipelineError, type CheckInput } from "./pipeline/index.js";
-import { AnthropicLLMClient } from "./pipeline/reason.js";
+import { OtariLLMClient } from "./pipeline/reason.js";
 import { checkRateLimit } from "./ratelimit.js";
 import { snapshot } from "./budget.js";
-import { MODEL, guardrails, x402 } from "./config.js";
+import { models, guardrails, x402 } from "./config.js";
 // Official OKX Payment seller SDK — builds the 402 challenge, verifies the
 // buyer's proof, and settles through the OKX facilitator (Broker).
 import { paymentMiddleware, x402ResourceServer } from "@okxweb3/x402-express";
@@ -43,7 +43,7 @@ const upload = multer({
 });
 
 // Shared LLM client (reused across requests).
-const llm = new AnthropicLLMClient();
+const llm = new OtariLLMClient();
 
 // ---- x402 payment gating via the official OKX seller SDK ---------------------
 // /api/check is the endpoint registered on-chain as an A2MCP service. The OKX
@@ -109,7 +109,8 @@ app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
     version: VERSION,
-    model: MODEL,
+    models: { vision: models.vision, verdict: models.verdict },
+    gateway: "otari",
     budget: {
       day: spend.day,
       calls: spend.calls,

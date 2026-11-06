@@ -23,7 +23,7 @@ import { checkDomainAge } from "./verify/domainAge.js";
 import { checkHeaderAuth } from "./verify/headerAuth.js";
 import { reason, type LLMClient } from "./reason.js";
 import {
-  AnthropicVisionClient,
+  OtariVisionClient,
   toMediaType,
   VisionBudgetError,
   VisionParseError,
@@ -157,7 +157,7 @@ export async function runCheck(
 ): Promise<CheckResult> {
   const startedAt = Date.now();
   const checkId = randomUUID();
-  const vision = deps.vision ?? new AnthropicVisionClient();
+  const vision = deps.vision ?? new OtariVisionClient();
 
   const extracted = await observeAndExtract(input, vision);
   const signals = await verify(extracted);

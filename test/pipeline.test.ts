@@ -18,7 +18,7 @@ import {
   type LLMClient,
 } from "../src/pipeline/reason.ts";
 import { runCheck } from "../src/pipeline/index.ts";
-import { MODEL, assertModelAllowed, estimateCostUsd } from "../src/config.ts";
+import { models, assertModelAllowed, estimateCostUsd } from "../src/config.ts";
 import {
   canSpend,
   record,
@@ -247,19 +247,17 @@ test("reason() falls back deterministically when the LLM returns garbage", async
 
 // ---------- COST GUARDRAILS ----------
 
-test("assertModelAllowed permits only claude-haiku-4-5", () => {
-  assert.equal(MODEL, "claude-haiku-4-5");
-  assert.doesNotThrow(() => assertModelAllowed(MODEL));
-  assert.throws(() => assertModelAllowed("claude-opus-4-8"), /not permitted/);
-  assert.throws(() => assertModelAllowed("claude-sonnet-5"), /not permitted/);
+test("assertModelAllowed permits only the configured model roles", () => {
+  assert.doesNotThrow(() => assertModelAllowed(models.vision));
+  assert.doesNotThrow(() => assertModelAllowed(models.verdict));
+  assert.throws(() => assertModelAllowed("anthropic:claude-opus-4-8"), /not one of/);
+  assert.throws(() => assertModelAllowed("openai:gpt-5"), /not one of/);
 });
 
-test("estimateCostUsd uses Haiku 4.5 pricing ($1/$5 per 1M)", () => {
-  // 1M input + 1M output = $1.00 + $5.00
-  assert.equal(estimateCostUsd(1_000_000, 1_000_000), 6);
-  // A representative text check: ~300 in, ~200 out
+test("estimateCostUsd uses the open-weight upper-bound estimate ($0.2/$0.6 per 1M)", () => {
+  assert.equal(Number(estimateCostUsd(1_000_000, 1_000_000).toFixed(6)), 0.8);
   const perCheck = estimateCostUsd(300, 200);
-  assert.ok(perCheck < 0.002, `expected < $0.002, got ${perCheck}`);
+  assert.ok(perCheck < 0.001, `expected < $0.001, got ${perCheck}`);
 });
 
 test("budget blocks spending once the daily cap is reached", () => {

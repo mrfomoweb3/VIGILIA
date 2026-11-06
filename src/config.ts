@@ -1,30 +1,43 @@
 // Central configuration + cost controls.
 //
-// SINGLE SOURCE OF TRUTH FOR THE MODEL. Nothing in this codebase may call the
-// Anthropic API with any other model — assertModelAllowed() enforces it.
-// Haiku 4.5 is the cheapest current model and the only one this service uses.
+// SINGLE SOURCE OF TRUTH FOR MODELS. Every model call goes through the Otari
+// gateway (see otari.ts), and each pipeline stage has exactly one model role.
+// All roles default to open-weight models. A role's value is either a concrete
+// Otari model ("provider:model") or the name of an Otari routing policy.
+// assertModelAllowed() refuses anything that isn't one of the configured roles.
 
-/** The only model this service is permitted to call. */
-export const MODEL = "claude-haiku-4-5";
+function envModel(name: string, fallback: string): string {
+  const raw = process.env[name];
+  return raw === undefined || raw.trim() === "" ? fallback : raw.trim();
+}
 
-/** Everything the app is allowed to send to Anthropic. Deliberately a set of one. */
-const MODEL_ALLOWLIST = new Set<string>([MODEL]);
+export const models = {
+  /** Reads screenshots: an open-weight vision-language model. */
+  get vision(): string {
+    return envModel("OTARI_VISION_MODEL", "groq:meta-llama/llama-4-scout-17b-16e-instruct");
+  },
+  /** Writes the verdict from structured signals: an open-weight reasoning model. */
+  get verdict(): string {
+    return envModel("OTARI_VERDICT_MODEL", "groq:openai/gpt-oss-120b");
+  },
+};
 
 /**
- * Hard guard: throws if any code path tries to use a model other than the
- * allowlisted one. Called immediately before every API request.
+ * Hard guard: throws if any code path tries to use a model that isn't one of
+ * the configured roles. Called immediately before every gateway request.
  */
 export function assertModelAllowed(model: string): void {
-  if (!MODEL_ALLOWLIST.has(model)) {
-    throw new Error(
-      `Model "${model}" is not permitted. This service may only call ${MODEL}.`,
-    );
+  const allowed = new Set<string>([models.vision, models.verdict]);
+  if (!allowed.has(model)) {
+    throw new Error(`Model "${model}" is not one of Vigilia's configured model roles.`);
   }
 }
 
-// ---- Pricing (USD per 1M tokens) — Claude Haiku 4.5 --------------------------
-export const PRICE_INPUT_PER_MTOK = 1.0;
-export const PRICE_OUTPUT_PER_MTOK = 5.0;
+// ---- Local spend estimate (USD per 1M tokens) -------------------------------
+// Rough upper bound for open-weight models, used only by the local daily
+// counter. Otari's own usage records are the authoritative spend.
+export const PRICE_INPUT_PER_MTOK = 0.2;
+export const PRICE_OUTPUT_PER_MTOK = 0.6;
 
 /** Estimated USD cost of a single API call from its token usage. */
 export function estimateCostUsd(inputTokens: number, outputTokens: number): number {
