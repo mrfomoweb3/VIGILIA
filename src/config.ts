@@ -37,20 +37,6 @@ export function assertModelAllowed(model: string): void {
   }
 }
 
-// ---- Local spend estimate (USD per 1M tokens) -------------------------------
-// Rough upper bound for open-weight models, used only by the local daily
-// counter. Otari's own usage records are the authoritative spend.
-export const PRICE_INPUT_PER_MTOK = 0.2;
-export const PRICE_OUTPUT_PER_MTOK = 0.6;
-
-/** Estimated USD cost of a single API call from its token usage. */
-export function estimateCostUsd(inputTokens: number, outputTokens: number): number {
-  return (
-    (inputTokens / 1_000_000) * PRICE_INPUT_PER_MTOK +
-    (outputTokens / 1_000_000) * PRICE_OUTPUT_PER_MTOK
-  );
-}
-
 // ---- Output caps (bound the worst-case cost of any single call) -------------
 export const MAX_TOKENS_REASON = 700;
 export const MAX_TOKENS_VISION = 1500;
@@ -129,7 +115,7 @@ export const x402 = {
  * API key behind it is a budget risk if left ungated.
  */
 export const guardrails = {
-  /** Master kill switch. false => no Anthropic calls at all (deterministic mode). */
+  /** Master kill switch. false => no model calls at all (deterministic mode). */
   get llmEnabled(): boolean {
     return bool("LLM_ENABLED", true);
   },
@@ -137,11 +123,7 @@ export const guardrails = {
   get visionEnabled(): boolean {
     return bool("VISION_ENABLED", true);
   },
-  /** Stop spending once this much has been spent today (UTC day). */
-  get dailyBudgetUsd(): number {
-    return num("DAILY_BUDGET_USD", 0.5);
-  },
-  /** Hard ceiling on Anthropic calls per UTC day, independent of cost. */
+  /** Hard ceiling on model calls per process per UTC day. Dollars are capped in Otari. */
   get maxCallsPerDay(): number {
     return num("MAX_LLM_CALLS_PER_DAY", 300);
   },

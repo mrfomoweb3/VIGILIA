@@ -120,14 +120,13 @@ app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
     version: VERSION,
-    models: { vision: models.vision, verdict: models.verdict },
     gateway: "otari",
+    models: { vision: models.vision, investigator: models.investigator, verdict: models.verdict },
     budget: {
       day: spend.day,
       calls: spend.calls,
-      spentUsd: spend.spentUsd,
-      budgetUsd: spend.budgetUsd,
-      remainingUsd: spend.remainingUsd,
+      maxCallsPerDay: spend.maxCallsPerDay,
+      spendEnforcedBy: spend.spendEnforcedBy,
       llmEnabled: guardrails.llmEnabled,
       visionEnabled: guardrails.visionEnabled,
     },

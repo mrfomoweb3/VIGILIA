@@ -73,14 +73,13 @@ export class OtariLLMClient implements LLMClient {
       ...(endUser ? { user: endUser } : {}),
     });
 
-    const cost = record(res.usage.promptTokens, res.usage.completionTokens);
+    record(res.usage.promptTokens, res.usage.completionTokens);
     console.log(
       JSON.stringify({
         llm: "reason",
         model: res.model,
         inputTokens: res.usage.promptTokens,
         outputTokens: res.usage.completionTokens,
-        costUsd: Number(cost.toFixed(6)),
         otari: res.headers,
       }),
     );

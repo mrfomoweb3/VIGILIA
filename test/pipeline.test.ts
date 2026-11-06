@@ -18,7 +18,7 @@ import {
   type LLMClient,
 } from "../src/pipeline/reason.ts";
 import { runCheck } from "../src/pipeline/index.ts";
-import { models, assertModelAllowed, estimateCostUsd } from "../src/config.ts";
+import { models, assertModelAllowed } from "../src/config.ts";
 import {
   canSpend,
   record,
@@ -254,23 +254,16 @@ test("assertModelAllowed permits only the configured model roles", () => {
   assert.throws(() => assertModelAllowed("openai:gpt-5"), /not one of/);
 });
 
-test("estimateCostUsd uses the open-weight upper-bound estimate ($0.2/$0.6 per 1M)", () => {
-  assert.equal(Number(estimateCostUsd(1_000_000, 1_000_000).toFixed(6)), 0.8);
-  const perCheck = estimateCostUsd(300, 200);
-  assert.ok(perCheck < 0.001, `expected < $0.001, got ${perCheck}`);
-});
-
-test("budget blocks spending once the daily cap is reached", () => {
+test("the local call cap blocks model calls once reached; dollars are Otari's job", () => {
   __resetBudget();
+  process.env.MAX_LLM_CALLS_PER_DAY = "2";
   assert.equal(canSpend("reason").allowed, true);
-  // Burn the default $0.50 budget: 1M output tokens = $5.
-  record(0, 1_000_000);
+  record(100, 50);
+  record(100, 50);
   const decision = canSpend("reason");
   assert.equal(decision.allowed, false);
-  assert.equal(
-    decision.allowed === false ? decision.reason : "",
-    "daily_budget_exhausted",
-  );
+  assert.equal(decision.allowed === false && decision.reason, "daily_call_cap_reached");
+  delete process.env.MAX_LLM_CALLS_PER_DAY;
   __resetBudget();
 });
 

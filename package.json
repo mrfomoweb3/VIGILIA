@@ -1,7 +1,7 @@
 {
   "name": "vigilia",
   "version": "1.0.0",
-  "description": "Pay-per-check scam detection ASP — checks emails, links, and screenshots for scams.",
+  "description": "Pay-per-check scam detection ASP \u2014 checks emails, links, and screenshots for scams.",
   "type": "module",
   "engines": {
     "node": ">=20"
@@ -11,7 +11,9 @@
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "test": "node --import tsx --test test/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "otari:check": "node scripts/otari-setup.mjs",
+    "otari:setup": "node scripts/otari-setup.mjs --apply"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",

@@ -1,14 +1,19 @@
-// Spend tracking + budget enforcement for Anthropic API calls.
+// Local safety switches for model calls.
 //
-// Purpose: this service runs on a small prepaid balance. Every Anthropic call
-// goes through canSpend() first and record() after, so the process can refuse
-// to spend past a daily cap instead of silently draining the account.
+// Spend is enforced by Otari, not here. This file used to keep its own daily
+// dollar counter, priced by hand and reset on every restart. It now leaves
+// money to the gateway, which knows the real price of every model, survives
+// restarts and enforces three layers of budget:
 //
-// Counters are in-memory and reset on restart. That is intentional and
-// documented: the primary abuse defense is the per-IP rate limiter, and the
-// daily cap is a second line of defense within a process lifetime.
+//   1. the service key's own spend ceiling (all checks together)
+//   2. a routing policy that moves the verdict to a cheaper open-weight model
+//      once 80% of the budget is used (budget_used_pct in the policy)
+//   3. a per-end-user budget, so one visitor can't use up everyone's checks
+//
+// What stays local is what the gateway can't know: the operator's kill
+// switches and a hard ceiling on calls per process per day.
 
-import { estimateCostUsd, guardrails } from "./config.js";
+import { guardrails } from "./config.js";
 
 interface DayCounters {
   /** UTC day key, e.g. "2026-07-20". */
@@ -16,94 +21,54 @@ interface DayCounters {
   calls: number;
   inputTokens: number;
   outputTokens: number;
-  spentUsd: number;
 }
 
 function utcDayKey(now = new Date()): string {
   return now.toISOString().slice(0, 10);
 }
 
-let counters: DayCounters = {
-  day: utcDayKey(),
-  calls: 0,
-  inputTokens: 0,
-  outputTokens: 0,
-  spentUsd: 0,
-};
+function fresh(): DayCounters {
+  return { day: utcDayKey(), calls: 0, inputTokens: 0, outputTokens: 0 };
+}
 
-/** Roll the counters over when the UTC day changes. */
+let counters: DayCounters = fresh();
+
 function rollIfNewDay(): void {
-  const today = utcDayKey();
-  if (counters.day !== today) {
-    counters = {
-      day: today,
-      calls: 0,
-      inputTokens: 0,
-      outputTokens: 0,
-      spentUsd: 0,
-    };
-  }
+  if (counters.day !== utcDayKey()) counters = fresh();
 }
 
 export type SpendDecision =
   | { allowed: true }
   | { allowed: false; reason: string };
 
-/**
- * Gate called before every Anthropic request. Returns a refusal reason rather
- * than throwing, so callers can degrade to the deterministic path.
- */
+/** Gate called before every model call. Returns a reason rather than throwing. */
 export function canSpend(kind: "reason" | "vision"): SpendDecision {
   rollIfNewDay();
-
-  if (!guardrails.llmEnabled) {
-    return { allowed: false, reason: "llm_disabled" };
-  }
+  if (!guardrails.llmEnabled) return { allowed: false, reason: "llm_disabled" };
   if (kind === "vision" && !guardrails.visionEnabled) {
     return { allowed: false, reason: "vision_disabled" };
   }
   if (counters.calls >= guardrails.maxCallsPerDay) {
     return { allowed: false, reason: "daily_call_cap_reached" };
   }
-  if (counters.spentUsd >= guardrails.dailyBudgetUsd) {
-    return { allowed: false, reason: "daily_budget_exhausted" };
-  }
   return { allowed: true };
 }
 
-/** Record actual usage after a successful call. Returns this call's cost. */
-export function record(inputTokens: number, outputTokens: number): number {
+/** Record a completed call (token counts are for the health page only). */
+export function record(inputTokens: number, outputTokens: number): void {
   rollIfNewDay();
-  const cost = estimateCostUsd(inputTokens, outputTokens);
   counters.calls += 1;
   counters.inputTokens += inputTokens;
   counters.outputTokens += outputTokens;
-  counters.spentUsd += cost;
-  return cost;
 }
 
-/** Current spend snapshot — surfaced on /api/health for monitoring. */
-export function snapshot(): Readonly<DayCounters> & {
-  budgetUsd: number;
-  remainingUsd: number;
-} {
+/** Snapshot for /api/health. Dollars live in Otari's usage records. */
+export function snapshot(): Readonly<DayCounters> & { maxCallsPerDay: number; spendEnforcedBy: "otari" } {
   rollIfNewDay();
-  const budgetUsd = guardrails.dailyBudgetUsd;
-  return {
-    ...counters,
-    spentUsd: Number(counters.spentUsd.toFixed(6)),
-    budgetUsd,
-    remainingUsd: Number(Math.max(0, budgetUsd - counters.spentUsd).toFixed(6)),
-  };
+  return { ...counters, maxCallsPerDay: guardrails.maxCallsPerDay, spendEnforcedBy: "otari" };
 }
 
 /** Test hook — reset counters. */
 export function __resetForTests(): void {
-  counters = {
-    day: utcDayKey(),
-    calls: 0,
-    inputTokens: 0,
-    outputTokens: 0,
-    spentUsd: 0,
-  };
+  counters = fresh();
 }
