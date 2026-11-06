@@ -30,7 +30,7 @@ truncated URLs — return them exactly as shown with a "truncated": true flag.`;
 export type ImageMediaType = "image/png" | "image/jpeg" | "image/gif" | "image/webp";
 
 export interface VisionClient {
-  extract(imageBase64: string, mediaType: ImageMediaType): Promise<VisionExtraction>;
+  extract(imageBase64: string, mediaType: ImageMediaType, endUser?: string): Promise<VisionExtraction>;
 }
 
 function parseJsonLoose(text: string): VisionExtraction | null {
@@ -58,6 +58,7 @@ export class OtariVisionClient implements VisionClient {
     imageBase64: string,
     mediaType: ImageMediaType,
     appendRetry: boolean,
+    endUser?: string,
   ): Promise<string> {
     // Vision is the most expensive path (~5x a text check) — gate every call,
     // including the retry.
@@ -82,6 +83,7 @@ export class OtariVisionClient implements VisionClient {
           ],
         },
       ],
+      ...(endUser ? { user: endUser } : {}),
     });
 
     const cost = record(res.usage.promptTokens, res.usage.completionTokens);
@@ -100,14 +102,14 @@ export class OtariVisionClient implements VisionClient {
     return res.text;
   }
 
-  async extract(imageBase64: string, mediaType: ImageMediaType): Promise<VisionExtraction> {
+  async extract(imageBase64: string, mediaType: ImageMediaType, endUser?: string): Promise<VisionExtraction> {
     // First attempt.
-    const first = await this.callOnce(imageBase64, mediaType, false);
+    const first = await this.callOnce(imageBase64, mediaType, false, endUser);
     const parsed = parseJsonLoose(first);
     if (parsed) return parsed;
 
     // Retry once with "Return only JSON" appended.
-    const second = await this.callOnce(imageBase64, mediaType, true);
+    const second = await this.callOnce(imageBase64, mediaType, true, endUser);
     const parsedRetry = parseJsonLoose(second);
     if (parsedRetry) return parsedRetry;
 

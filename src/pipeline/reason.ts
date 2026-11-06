@@ -25,6 +25,8 @@ You receive structured signals from deterministic security tools. You must:
 2. HARD RULES you cannot override:
    - Any "flagged" from safe_browsing => verdict is CONFIRMED_SCAM.
    - typosquat "flagged" OR header_auth spoofing "flagged" => at minimum SUSPICIOUS.
+   - page_inspection "flagged" OR prompt_injection "flagged" => at minimum SUSPICIOUS.
+   - page_inspection "suspicious" is a strong hint (the page asks for secrets); weigh it.
    - All checks "clean" and none "error"/"unknown" => SAFE, confidence per signal coverage.
    - Any check "error" or "unknown" => confidence cannot be "high"; say what couldn't be verified.
 3. Write a 2-4 sentence plain-language explanation citing the specific evidence
@@ -35,7 +37,7 @@ Output ONLY JSON: { "verdict": ..., "confidence": ..., "explanation": ..., "reco
 
 /** Minimal interface so tests can inject a mock LLM. */
 export interface LLMClient {
-  synthesize(userPrompt: string): Promise<string>;
+  synthesize(userPrompt: string, endUser?: string): Promise<string>;
 }
 
 /** Thrown when a guardrail blocks the call (budget, kill switch, call cap). */
@@ -50,7 +52,7 @@ export class BudgetExhaustedError extends Error {
 export class OtariLLMClient implements LLMClient {
   constructor(private readonly client: OtariClient = otari()) {}
 
-  async synthesize(userPrompt: string): Promise<string> {
+  async synthesize(userPrompt: string, endUser?: string): Promise<string> {
     // Budget gate — refuse rather than spend past the daily cap. The caller
     // falls back to the deterministic verdict path.
     const decision = canSpend("reason");
@@ -68,6 +70,7 @@ export class OtariLLMClient implements LLMClient {
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userPrompt },
       ],
+      ...(endUser ? { user: endUser } : {}),
     });
 
     const cost = record(res.usage.promptTokens, res.usage.completionTokens);
@@ -141,6 +144,8 @@ export interface HardRuleContext {
   hasSafeBrowsingFlag: boolean;
   hasTyposquatFlag: boolean;
   hasHeaderSpoofFlag: boolean;
+  /** Page inspection (re-verified) or a prompt-injection guardrail hit. */
+  hasInspectionFlag: boolean;
   hasErrorOrUnknown: boolean;
   allClean: boolean;
 }
@@ -152,6 +157,9 @@ export function deriveContext(signals: Signal[]): HardRuleContext {
   const hasSafeBrowsingFlag = by("safe_browsing").some((s) => s.result === "flagged");
   const hasTyposquatFlag = by("typosquat").some((s) => s.result === "flagged");
   const hasHeaderSpoofFlag = by("header_auth").some((s) => s.result === "flagged");
+  const hasInspectionFlag =
+    by("page_inspection").some((s) => s.result === "flagged") ||
+    by("prompt_injection").some((s) => s.result === "flagged");
 
   // Only checks that actually ran count toward "error/unknown". A signal that
   // is "unknown" purely because it wasn't applicable still caps confidence —
@@ -167,6 +175,7 @@ export function deriveContext(signals: Signal[]): HardRuleContext {
     hasSafeBrowsingFlag,
     hasTyposquatFlag,
     hasHeaderSpoofFlag,
+    hasInspectionFlag,
     hasErrorOrUnknown,
     allClean,
   };
@@ -204,6 +213,15 @@ export function enforceHardRules(
     verdict = "SUSPICIOUS";
   }
 
+  // Rule 3: a re-verified page-inspection hit or a prompt-injection guardrail
+  // hit => at least SUSPICIOUS. Never CONFIRMED_SCAM on these alone.
+  if (ctx.hasInspectionFlag && VERDICT_RANK[verdict] < VERDICT_RANK["SUSPICIOUS"]) {
+    overrides.push(
+      `verdict ${verdict} -> SUSPICIOUS (page_inspection/prompt_injection flagged; hard rule)`,
+    );
+    verdict = "SUSPICIOUS";
+  }
+
   // Rule 4: any error/unknown => confidence cannot be "high".
   if (ctx.hasErrorOrUnknown && confidence === "high") {
     overrides.push(
@@ -222,7 +240,7 @@ export function enforceHardRules(
 export function fallbackOutput(signals: Signal[], ctx: HardRuleContext): ReasonOutput {
   let verdict: Verdict = "SAFE";
   if (ctx.hasSafeBrowsingFlag) verdict = "CONFIRMED_SCAM";
-  else if (ctx.hasTyposquatFlag || ctx.hasHeaderSpoofFlag) verdict = "SUSPICIOUS";
+  else if (ctx.hasTyposquatFlag || ctx.hasHeaderSpoofFlag || ctx.hasInspectionFlag) verdict = "SUSPICIOUS";
   else if (ctx.hasErrorOrUnknown && !ctx.allClean) verdict = "SUSPICIOUS";
 
   const confidence: Confidence = ctx.hasErrorOrUnknown ? "low" : ctx.allClean ? "medium" : "low";
@@ -254,13 +272,14 @@ export async function reason(
   signals: Signal[],
   urgencyCues: string[],
   llm: LLMClient,
+  endUser?: string,
 ): Promise<{ output: ReasonOutput; overrides: string[] }> {
   const ctx = deriveContext(signals);
   const prompt = buildUserPrompt(signals, urgencyCues);
 
   let proposed: ReasonOutput | null = null;
   try {
-    const raw = await llm.synthesize(prompt);
+    const raw = await llm.synthesize(prompt, endUser);
     const parsed = parseJsonLoose(raw);
     if (
       parsed &&

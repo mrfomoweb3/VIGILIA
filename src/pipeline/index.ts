@@ -22,6 +22,8 @@ import { checkTyposquat } from "./verify/typosquat.js";
 import { checkDomainAge } from "./verify/domainAge.js";
 import { checkHeaderAuth } from "./verify/headerAuth.js";
 import { reason, type LLMClient } from "./reason.js";
+import { inspect } from "./inspect.js";
+import { OtariBudgetError } from "../otari.js";
 import {
   OtariVisionClient,
   toMediaType,
@@ -44,11 +46,23 @@ export interface CheckInput {
   url?: string;
   emailText?: string;
   screenshot?: { buffer: Buffer; mimetype: string };
+  /**
+   * Stable, pseudonymous id of whoever asked for the check. Sent to Otari as
+   * the end user, so each visitor or payer gets a budget of their own.
+   */
+  endUser?: string;
 }
 
 export interface PipelineDeps {
   llm: LLMClient;
   vision?: VisionClient;
+  /** Page inspection; injectable so tests run without the gateway. */
+  inspect?: typeof inspect;
+}
+
+/** True when Otari refused because this end user's own budget is spent. */
+export function isEndUserBudget(err: OtariBudgetError): boolean {
+  return /end[\s_-]?user/i.test(`${err.code ?? ""} ${err.message}`);
 }
 
 /** Turn a raw signal into the trimmed evidence row returned to the client. */
@@ -76,6 +90,7 @@ async function safeCheck(
 async function observeAndExtract(
   input: CheckInput,
   vision: VisionClient,
+  endUser?: string,
 ): Promise<ExtractedInput> {
   if (input.screenshot) {
     const mediaType = toMediaType(input.screenshot.mimetype);
@@ -89,12 +104,19 @@ async function observeAndExtract(
       extraction = await vision.extract(
         input.screenshot.buffer.toString("base64"),
         mediaType as ImageMediaType,
+        endUser,
       );
     } catch (err) {
       if (err instanceof VisionParseError) {
         throw new PipelineError("Could not read the screenshot. Try a clearer image.");
       }
-      if (err instanceof VisionBudgetError) {
+      if (err instanceof OtariBudgetError && isEndUserBudget(err)) {
+        throw new PipelineError(
+          "You've used today's free checks. Come back tomorrow, or use the paid API.",
+          429,
+        );
+      }
+      if (err instanceof VisionBudgetError || err instanceof OtariBudgetError) {
         // Honest failure: we will not silently pretend the screenshot was read.
         throw new PipelineError(
           "Screenshot checks are temporarily unavailable (daily capacity reached). Paste the link or email text instead.",
@@ -159,9 +181,33 @@ export async function runCheck(
   const checkId = randomUUID();
   const vision = deps.vision ?? new OtariVisionClient();
 
-  const extracted = await observeAndExtract(input, vision);
-  const signals = await verify(extracted);
-  const { output, overrides } = await reason(signals, extracted.urgencyCues, deps.llm);
+  const extracted = await observeAndExtract(input, vision, input.endUser);
+  const runInspect = deps.inspect ?? inspect;
+
+  // Deterministic checks and the agentic page inspection run side by side.
+  const [baseSignals, inspected] = await Promise.all([
+    verify(extracted),
+    runInspect(extracted, { endUser: input.endUser }).catch((err: unknown): Signal[] => {
+      if (err instanceof OtariBudgetError && isEndUserBudget(err)) throw err;
+      return [
+        {
+          signal: "page_inspection",
+          result: "unknown",
+          detail: "Page inspection was skipped: the service's AI budget is used up for now.",
+        },
+      ];
+    }),
+  ]).catch((err: unknown) => {
+    if (err instanceof OtariBudgetError) {
+      throw new PipelineError(
+        "You've used today's free checks. Come back tomorrow, or use the paid API.",
+        429,
+      );
+    }
+    throw err;
+  });
+  const signals = [...baseSignals, ...inspected];
+  const { output, overrides } = await reason(signals, extracted.urgencyCues, deps.llm, input.endUser);
 
   const result: CheckResult = {
     verdict: output.verdict,

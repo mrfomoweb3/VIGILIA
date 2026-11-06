@@ -16,6 +16,10 @@ export const models = {
   get vision(): string {
     return envModel("OTARI_VISION_MODEL", "groq:meta-llama/llama-4-scout-17b-16e-instruct");
   },
+  /** Follows links with Otari's fetch, code execution and MCP tools. */
+  get investigator(): string {
+    return envModel("OTARI_INVESTIGATOR_MODEL", "groq:qwen/qwen3-32b");
+  },
   /** Writes the verdict from structured signals: an open-weight reasoning model. */
   get verdict(): string {
     return envModel("OTARI_VERDICT_MODEL", "groq:openai/gpt-oss-120b");
@@ -27,7 +31,7 @@ export const models = {
  * the configured roles. Called immediately before every gateway request.
  */
 export function assertModelAllowed(model: string): void {
-  const allowed = new Set<string>([models.vision, models.verdict]);
+  const allowed = new Set<string>([models.vision, models.investigator, models.verdict]);
   if (!allowed.has(model)) {
     throw new Error(`Model "${model}" is not one of Vigilia's configured model roles.`);
   }

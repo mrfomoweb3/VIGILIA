@@ -8,6 +8,8 @@ import { dirname, join } from "node:path";
 import { runCheck, PipelineError, type CheckInput } from "./pipeline/index.js";
 import { OtariLLMClient } from "./pipeline/reason.js";
 import { checkRateLimit } from "./ratelimit.js";
+import { handleMcp, MCP_PATH } from "./mcp.js";
+import { channelForPath, endUserId } from "./endUser.js";
 import { snapshot } from "./budget.js";
 import { models, guardrails, x402 } from "./config.js";
 // Official OKX Payment seller SDK — builds the 402 challenge, verifies the
@@ -40,6 +42,15 @@ app.use(express.json({ limit: "256kb" }));
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+// Vigilia's checkers as an MCP server, for Otari to call during page inspection.
+// Bearer-token protected (VIGILIA_MCP_TOKEN); read-only lookups only.
+app.all(MCP_PATH, (req, res) => {
+  handleMcp(req, res).catch((err) => {
+    console.error("MCP error:", err);
+    if (!res.headersSent) res.status(500).json({ error: "mcp failure" });
+  });
 });
 
 // Shared LLM client (reused across requests).
@@ -158,6 +169,10 @@ async function handleCheck(req: Request, res: Response) {
     if (!input.screenshot && !input.url && !input.emailText) {
       return res.status(400).json({ error: "No link or email content found in input." });
     }
+
+    // Each caller gets their own Otari end-user budget.
+    const ip = req.ip ?? req.socket.remoteAddress ?? "unknown";
+    input.endUser = endUserId(channelForPath(req.path), ip);
 
     const result = await runCheck(input, { llm });
     return res.status(200).json(result);

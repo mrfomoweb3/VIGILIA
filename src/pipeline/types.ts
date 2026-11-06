@@ -21,7 +21,11 @@ export type SignalName =
   | "safe_browsing"
   | "domain_age"
   | "typosquat"
-  | "header_auth";
+  | "header_auth"
+  /** Agentic page inspection via Otari tools, re-verified in code. */
+  | "page_inspection"
+  /** An Otari guardrail found instructions aimed at AI assistants. */
+  | "prompt_injection";
 
 /** One structured signal emitted by a deterministic verify stage. */
 export interface Signal {
